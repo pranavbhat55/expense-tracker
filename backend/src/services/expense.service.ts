@@ -33,28 +33,16 @@ export async function getExpenses(filters?: {
     }
 
     if (filters?.month) {
-        const parts = filters.month.split("-");
+        const [yearString, monthString] = filters.month.split("-");
 
-        if (parts.length !== 2) {
-            throw new Error("Invalid month format. Use YYYY-MM.");
-        }
-
-        const year = Number(parts[0]);
-        const month = Number(parts[1]);
-
-        if (
-            !Number.isInteger(year) ||
-            !Number.isInteger(month) ||
-            month < 1 ||
-            month > 12
-        ) {
-            throw new Error("Invalid month format. Use YYYY-MM.");
-        }
+        const year = Number(yearString);
+        const month = Number(monthString);
 
         where.date = {
             gte: new Date(Date.UTC(year, month - 1, 1)),
             lt: new Date(Date.UTC(year, month, 1)),
         };
+
     }
 
     return prisma.expense.findMany({

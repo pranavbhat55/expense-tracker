@@ -6,9 +6,10 @@ import {
     getExpensesController,
     updateExpenseController,
 } from "../controllers/expense.controller.js";
-import { validateBody } from "../middleware/validate.js";
+import { validateBody, validateQuery } from "../middleware/validate.js";
 import {
     createExpenseSchema,
+    expenseQuerySchema,
     updateExpenseSchema,
 } from "../middleware/expense.validation.js";
 
@@ -20,7 +21,11 @@ router.post(
     createExpenseController,
 );
 
-router.get("/", getExpensesController);
+router.get(
+    "/",
+    validateQuery(expenseQuerySchema),
+    getExpensesController,
+);
 
 router.get("/:id", getExpenseByIdController);
 
