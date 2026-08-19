@@ -65,6 +65,7 @@ export async function getExpenses(filters?: {
         ],
     });
 }
+
 export async function getExpenseById(id: number) {
     return prisma.expense.findUnique({
         where: {
@@ -72,6 +73,7 @@ export async function getExpenseById(id: number) {
         },
     });
 }
+
 export async function updateExpense(
     id: number,
     data: {
@@ -81,6 +83,14 @@ export async function updateExpense(
         note?: string;
     },
 ) {
+    const existingExpense = await prisma.expense.findUnique({
+        where: { id },
+    });
+
+    if (!existingExpense) {
+        return null;
+    }
+
     return prisma.expense.update({
         where: {
             id,
@@ -93,7 +103,16 @@ export async function updateExpense(
         },
     });
 }
+
 export async function deleteExpense(id: number) {
+    const existingExpense = await prisma.expense.findUnique({
+        where: { id },
+    });
+
+    if (!existingExpense) {
+        return null;
+    }
+
     return prisma.expense.delete({
         where: {
             id,
