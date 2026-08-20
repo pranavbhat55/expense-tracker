@@ -3,7 +3,9 @@ import type { FormEvent } from "react";
 import { login } from "./api/auth";
 import {
   createExpense,
+  deleteExpense,
   getExpenses,
+  updateExpense,
 } from "./api/expenses";
 import type { Expense } from "./types/expense";
 import "./App.css";
@@ -14,6 +16,8 @@ function App() {
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
+  const [editingExpenseId, setEditingExpenseId] =
+    useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState("");
@@ -70,7 +74,7 @@ function App() {
       setLoading(false);
     }
   }
-  async function handleCreateExpense(
+  async function handleExpenseSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
@@ -79,24 +83,87 @@ function App() {
     setError("");
 
     try {
-      await createExpense(
-        Number(amount),
-        category,
-        date,
-        note,
-      );
+      if (editingExpenseId !== null) {
+        await updateExpense(
+          editingExpenseId,
+          Number(amount),
+          category,
+          date,
+          note,
+        );
+      } else {
+        await createExpense(
+          Number(amount),
+          category,
+          date,
+          note,
+        );
+      }
 
       setAmount("");
       setCategory("");
       setDate("");
       setNote("");
+      setEditingExpenseId(null);
 
       await loadExpenses();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Failed to create expense");
+        setError("Failed to save expense");
+      }
+
+      setLoading(false);
+    }
+  }
+  function handleEditExpense(expense: Expense) {
+    setEditingExpenseId(expense.id);
+    setAmount(String(expense.amount));
+    setCategory(expense.category);
+
+    setDate(
+      new Date(expense.date)
+        .toISOString()
+        .split("T")[0],
+    );
+
+    setNote(expense.note || "");
+    setError("");
+  }
+
+  function handleCancelEdit() {
+    setEditingExpenseId(null);
+    setAmount("");
+    setCategory("");
+    setDate("");
+    setNote("");
+  }
+  async function handleDeleteExpense(id: number) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await deleteExpense(id);
+
+      if (editingExpenseId === id) {
+        handleCancelEdit();
+      }
+
+      await loadExpenses();
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to delete expense");
       }
 
       setLoading(false);
@@ -199,11 +266,15 @@ function App() {
         </button>
       </header>
       <section className="expense-form-container">
-        <h2>Add Expense</h2>
+        <h2>
+          {editingExpenseId !== null
+            ? "Edit Expense"
+            : "Add Expense"}
+        </h2>
 
         <form
           className="expense-form"
-          onSubmit={handleCreateExpense}
+          onSubmit={handleExpenseSubmit}
         >
           <label htmlFor="amount">
             Amount
@@ -270,6 +341,15 @@ function App() {
               ? "Adding..."
               : "Add Expense"}
           </button>
+          {editingExpenseId !== null && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          )}
         </form>
       </section>
 
@@ -300,6 +380,7 @@ function App() {
               <span>Category</span>
               <span>Note</span>
               <span>Amount</span>
+              <span>Actions</span>
             </div>
 
             {expenses.map((expense) => (
@@ -326,6 +407,23 @@ function App() {
                   {Number(
                     expense.amount,
                   ).toFixed(2)}
+                </span>
+
+                <span>
+                  <button
+                    type="button"
+                    onClick={() => handleEditExpense(expense)}
+                    disabled={loading}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExpense(expense.id)}
+                    disabled={loading}
+                  >
+                    Delete
+                  </button>
                 </span>
               </div>
             ))}
