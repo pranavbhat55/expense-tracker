@@ -89,6 +89,82 @@ export async function getExpenses(
         },
     };
 }
+export async function getExpenseSummary(
+    userId: number,
+    month?: string,
+) {
+    const where: {
+        userId: number;
+        date?: {
+            gte: Date;
+            lt: Date;
+        };
+    } = {
+        userId,
+    };
+
+    if (month) {
+        const [yearString, monthString] =
+            month.split("-");
+
+        const year = Number(yearString);
+        const monthNumber = Number(monthString);
+
+        where.date = {
+            gte: new Date(
+                Date.UTC(year, monthNumber - 1, 1),
+            ),
+            lt: new Date(
+                Date.UTC(year, monthNumber, 1),
+            ),
+        };
+    }
+
+    const [expenses, count] = await Promise.all([
+        prisma.expense.findMany({
+            where,
+            select: {
+                amount: true,
+                category: true,
+            },
+        }),
+        prisma.expense.count({
+            where,
+        }),
+    ]);
+
+    const total = expenses.reduce(
+        (sum, expense) =>
+            sum + Number(expense.amount),
+        0,
+    );
+
+    const categoryMap = new Map<string, number>();
+
+    for (const expense of expenses) {
+        const currentTotal =
+            categoryMap.get(expense.category) ?? 0;
+
+        categoryMap.set(
+            expense.category,
+            currentTotal + Number(expense.amount),
+        );
+    }
+
+    const byCategory = Array.from(
+        categoryMap,
+        ([category, total]) => ({
+            category,
+            total,
+        }),
+    );
+
+    return {
+        total,
+        count,
+        byCategory,
+    };
+}
 
 export async function getExpenseById(
     id: number,

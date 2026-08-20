@@ -4,6 +4,7 @@ import {
     deleteExpenseController,
     getExpenseByIdController,
     getExpensesController,
+    getExpenseSummaryController,
     updateExpenseController,
 } from "../controllers/expense.controller.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -27,6 +28,10 @@ router.get(
     "/",
     validateQuery(expenseQuerySchema),
     getExpensesController,
+);
+router.get(
+    "/summary",
+    getExpenseSummaryController,
 );
 
 router.get("/:id", getExpenseByIdController);

@@ -4,6 +4,7 @@ import {
     deleteExpense,
     getExpenseById,
     getExpenses,
+    getExpenseSummary,
     updateExpense,
 } from "../services/expense.service.js";
 export async function createExpenseController(
@@ -92,6 +93,33 @@ export async function getExpensesController(
 
         return res.status(500).json({
             message: "Failed to fetch expenses",
+        });
+    }
+}
+export async function getExpenseSummaryController(
+    req: Request,
+    res: Response,
+) {
+    try {
+        const month =
+            typeof req.query.month === "string"
+                ? req.query.month
+                : undefined;
+
+        const summary = await getExpenseSummary(
+            req.userId,
+            month,
+        );
+
+        return res.status(200).json(summary);
+    } catch (error) {
+        console.error(
+            "Failed to fetch expense summary:",
+            error,
+        );
+
+        return res.status(500).json({
+            message: "Failed to fetch expense summary",
         });
     }
 }
