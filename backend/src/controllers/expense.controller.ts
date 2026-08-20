@@ -13,13 +13,12 @@ export async function createExpenseController(
     try {
         const { amount, category, date, note } = req.body;
 
-        const expense = await createExpense({
+        const expense = await createExpense(req.userId, {
             amount,
             category,
             date,
             note,
         });
-
         return res.status(201).json(expense);
     } catch (error) {
         console.error("Failed to create expense:", error);
@@ -58,8 +57,7 @@ export async function getExpensesController(
             filters.category = category;
         }
 
-        const expenses = await getExpenses(filters);
-
+        const expenses = await getExpenses(req.userId, filters);
         return res.status(200).json(expenses);
     } catch (error) {
         console.error("Failed to fetch expenses:", error);
@@ -91,7 +89,7 @@ export async function getExpenseByIdController(
             });
         }
 
-        const expense = await getExpenseById(id);
+        const expense = await getExpenseById(id, req.userId);
 
         if (!expense) {
             return res.status(404).json({
@@ -123,15 +121,17 @@ export async function updateExpenseController(
 
         const { amount, category, date, note } = req.body;
 
-        const existingExpense = await getExpenseById(id);
-
+        const existingExpense = await getExpenseById(
+            id,
+            req.userId,
+        );
         if (!existingExpense) {
             return res.status(404).json({
                 message: "Expense not found",
             });
         }
 
-        const expense = await updateExpense(id, {
+        const expense = await updateExpense(id, req.userId, {
             amount,
             category,
             date,
@@ -160,15 +160,17 @@ export async function deleteExpenseController(
             });
         }
 
-        const existingExpense = await getExpenseById(id);
-
+        const existingExpense = await getExpenseById(
+            id,
+            req.userId,
+        );
         if (!existingExpense) {
             return res.status(404).json({
                 message: "Expense not found",
             });
         }
 
-        await deleteExpense(id);
+        await deleteExpense(id, req.userId);
 
         return res.status(204).send();
     } catch (error) {

@@ -12,8 +12,10 @@ import {
     expenseQuerySchema,
     updateExpenseSchema,
 } from "../middleware/expense.validation.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = Router();
+router.use(authenticate);
 
 router.post(
     "/",
