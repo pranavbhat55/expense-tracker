@@ -1,9 +1,16 @@
 import express from "express";
+import cors from "cors";
 import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+
+app.use(
+    cors({
+        origin: "http://localhost:5173",
+    }),
+);
 
 const PORT = 3000;
 
