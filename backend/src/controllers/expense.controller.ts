@@ -44,10 +44,25 @@ export async function getExpensesController(
                 ? req.query.category
                 : undefined;
 
+        const page =
+            typeof req.query.page === "string"
+                ? Number(req.query.page)
+                : 1;
+
+        const limit =
+            typeof req.query.limit === "string"
+                ? Number(req.query.limit)
+                : 10;
+
         const filters: {
             month?: string;
             category?: string;
-        } = {};
+            page: number;
+            limit: number;
+        } = {
+            page,
+            limit,
+        };
 
         if (month !== undefined) {
             filters.month = month;
@@ -57,7 +72,11 @@ export async function getExpensesController(
             filters.category = category;
         }
 
-        const expenses = await getExpenses(req.userId, filters);
+        const expenses = await getExpenses(
+            req.userId,
+            filters,
+        );
+
         return res.status(200).json(expenses);
     } catch (error) {
         console.error("Failed to fetch expenses:", error);

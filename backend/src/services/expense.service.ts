@@ -14,7 +14,9 @@ export async function createExpense(
             amount: data.amount,
             category: data.category,
             date: data.date,
-            ...(data.note !== undefined && { note: data.note }),
+            ...(data.note !== undefined && {
+                note: data.note,
+            }),
             userId,
         },
     });
@@ -22,9 +24,11 @@ export async function createExpense(
 
 export async function getExpenses(
     userId: number,
-    filters?: {
+    filters: {
         month?: string;
         category?: string;
+        page: number;
+        limit: number;
     },
 ) {
     const where: {
@@ -38,12 +42,13 @@ export async function getExpenses(
         userId,
     };
 
-    if (filters?.category) {
+    if (filters.category) {
         where.category = filters.category;
     }
 
-    if (filters?.month) {
-        const [yearString, monthString] = filters.month.split("-");
+    if (filters.month) {
+        const [yearString, monthString] =
+            filters.month.split("-");
 
         const year = Number(yearString);
         const month = Number(monthString);
@@ -54,13 +59,35 @@ export async function getExpenses(
         };
     }
 
-    return prisma.expense.findMany({
-        where,
-        orderBy: [
-            { date: "desc" },
-            { createdAt: "desc" },
-        ],
-    });
+    const skip =
+        (filters.page - 1) * filters.limit;
+
+    const [expenses, total] = await Promise.all([
+        prisma.expense.findMany({
+            where,
+            orderBy: [
+                { date: "desc" },
+                { createdAt: "desc" },
+            ],
+            skip,
+            take: filters.limit,
+        }),
+        prisma.expense.count({
+            where,
+        }),
+    ]);
+
+    return {
+        data: expenses,
+        pagination: {
+            page: filters.page,
+            limit: filters.limit,
+            total,
+            totalPages: Math.ceil(
+                total / filters.limit,
+            ),
+        },
+    };
 }
 
 export async function getExpenseById(
@@ -85,7 +112,10 @@ export async function updateExpense(
         note?: string;
     },
 ) {
-    const existingExpense = await getExpenseById(id, userId);
+    const existingExpense = await getExpenseById(
+        id,
+        userId,
+    );
 
     if (!existingExpense) {
         return null;
@@ -99,7 +129,9 @@ export async function updateExpense(
             amount: data.amount,
             category: data.category,
             date: data.date,
-            ...(data.note !== undefined && { note: data.note }),
+            ...(data.note !== undefined && {
+                note: data.note,
+            }),
         },
     });
 }
@@ -108,7 +140,10 @@ export async function deleteExpense(
     id: number,
     userId: number,
 ) {
-    const existingExpense = await getExpenseById(id, userId);
+    const existingExpense = await getExpenseById(
+        id,
+        userId,
+    );
 
     if (!existingExpense) {
         return null;
