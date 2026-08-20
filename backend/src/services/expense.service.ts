@@ -120,24 +120,35 @@ export async function getExpenseSummary(
         };
     }
 
-    const [expenses, count] = await Promise.all([
-        prisma.expense.findMany({
-            where,
-            select: {
-                amount: true,
-                category: true,
-            },
-        }),
-        prisma.expense.count({
-            where,
-        }),
-    ]);
+    const expenses = await prisma.expense.findMany({
+        where,
+        select: {
+            amount: true,
+            category: true,
+        },
+    });
+
+    const count = expenses.length;
 
     const total = expenses.reduce(
         (sum, expense) =>
             sum + Number(expense.amount),
         0,
     );
+
+    const average =
+        count > 0
+            ? total / count
+            : 0;
+
+    const highest =
+        count > 0
+            ? Math.max(
+                ...expenses.map((expense) =>
+                    Number(expense.amount),
+                ),
+            )
+            : 0;
 
     const categoryMap = new Map<string, number>();
 
@@ -157,15 +168,16 @@ export async function getExpenseSummary(
             category,
             total,
         }),
-    );
+    ).sort((a, b) => b.total - a.total);
 
     return {
         total,
         count,
+        average,
+        highest,
         byCategory,
     };
 }
-
 export async function getExpenseById(
     id: number,
     userId: number,
@@ -177,7 +189,6 @@ export async function getExpenseById(
         },
     });
 }
-
 export async function updateExpense(
     id: number,
     userId: number,
