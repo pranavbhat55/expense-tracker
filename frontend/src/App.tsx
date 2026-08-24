@@ -14,6 +14,29 @@ import {
 import type { Expense, ExpenseSummary } from "./types/expense";
 import "./App.css";
 
+type Theme = "light" | "dark";
+
+function getInitialTheme(): Theme {
+  try {
+    const stored = localStorage.getItem("theme");
+
+    if (stored === "light" || stored === "dark") {
+      return stored;
+    }
+
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: light)").matches
+    ) {
+      return "light";
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return "dark";
+}
+
 function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] =
@@ -34,6 +57,21 @@ function App() {
   const [name, setName] = useState("");
   const [isRegistering, setIsRegistering] =
     useState(false);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -237,21 +275,72 @@ function App() {
     setError("");
   }
 
+  const themeToggleButton = (
+    <button
+      type="button"
+      className="theme-toggle"
+      onClick={toggleTheme}
+      aria-label={
+        theme === "dark"
+          ? "Switch to light mode"
+          : "Switch to dark mode"
+      }
+      title={
+        theme === "dark"
+          ? "Switch to light mode"
+          : "Switch to dark mode"
+      }
+    >
+      {theme === "dark" ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2" />
+          <path
+            d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </button>
+  );
+
   if (checkingAuth) {
     return (
-      <main className="app">
-        <p>Loading...</p>
+      <main className="app app--center">
+        <div className="boot-loader">
+          <span className="spinner" aria-hidden="true" />
+          <p>Loading your ledger…</p>
+        </div>
       </main>
     );
   }
 
   const isLoggedIn = localStorage.getItem("token");
 
+  const maxCategoryTotal =
+    summary && summary.byCategory.length > 0
+      ? Math.max(...summary.byCategory.map((item) => item.total))
+      : 0;
 
   if (!isLoggedIn) {
     return (
-      <main className="app">
+      <main className="app app--center">
         <section className="login-container">
+          <div className="login-top-row">
+            <div className="brand-mark" aria-hidden="true">₹</div>
+            {themeToggleButton}
+          </div>
+
           <h1>Expense Tracker</h1>
 
           <p className="login-subtitle">
@@ -260,8 +349,40 @@ function App() {
               : "Sign in to manage your expenses"}
           </p>
 
+          <div className="auth-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!isRegistering}
+              className={
+                !isRegistering ? "auth-tab is-active" : "auth-tab"
+              }
+              onClick={() => {
+                setIsRegistering(false);
+                setError("");
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isRegistering}
+              className={
+                isRegistering ? "auth-tab is-active" : "auth-tab"
+              }
+              onClick={() => {
+                setIsRegistering(true);
+                setError("");
+              }}
+            >
+              Create Account
+            </button>
+          </div>
+
           {error && (
-            <p className="error">
+            <p className="error" role="alert">
+              <span className="error-icon" aria-hidden="true">!</span>
               {error}
             </p>
           )}
@@ -285,6 +406,7 @@ function App() {
                 onChange={(event) =>
                   setName(event.target.value)
                 }
+                placeholder="Jane Doe"
                 required
               />
             </>
@@ -300,6 +422,7 @@ function App() {
               onChange={(event) =>
                 setEmail(event.target.value)
               }
+              placeholder="you@example.com"
               required
             />
 
@@ -314,34 +437,24 @@ function App() {
               onChange={(event) =>
                 setPassword(event.target.value)
               }
+              placeholder="••••••••"
               required
             />
 
             <button
               type="submit"
+              className="btn btn--primary btn--block"
               disabled={loading}
             >
               {loading ? isRegistering
-                ? "Creating account..."
-                : "Signing in..."
+                ? "Creating account…"
+                : "Signing in…"
                 : isRegistering
                   ? "Create Account"
                   : "Sign In"}
 
             </button>
           </form>
-          <button
-            type="button"
-            className="auth-toggle"
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setError("");
-            }}
-          >
-            {isRegistering
-              ? "Already have an account? Sign In"
-              : "New here? Create an account"}
-          </button>
         </section>
       </main>
     );
@@ -350,20 +463,33 @@ function App() {
   return (
     <main className="app">
       <header className="header">
-        <div>
-          <h1>Expense Tracker</h1>
-          <p>
-            Manage and track your expenses
-          </p>
+        <div className="header-title">
+          <span className="brand-mark brand-mark--sm" aria-hidden="true">₹</span>
+          <div>
+            <h1>Expense Tracker</h1>
+            <p>
+              Manage and track your expenses
+            </p>
+          </div>
         </div>
 
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
+        <div className="header-actions">
+          {themeToggleButton}
+
+          <button
+            className="btn btn--ghost"
+            onClick={handleLogout}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 17l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </header>
+
       <section className="expense-form-container">
         <h2>
           {editingExpenseId !== null
@@ -375,146 +501,171 @@ function App() {
           className="expense-form"
           onSubmit={handleExpenseSubmit}
         >
-          <label htmlFor="amount">
-            Amount
-          </label>
+          <div className="field">
+            <label htmlFor="amount">
+              Amount
+            </label>
 
-          <input
-            id="amount"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={amount}
-            onChange={(event) =>
-              setAmount(event.target.value)
-            }
-            required
-          />
+            <div className="input-prefix">
+              <span aria-hidden="true">₹</span>
+              <input
+                id="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount}
+                onChange={(event) =>
+                  setAmount(event.target.value)
+                }
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
 
-          <label htmlFor="category">
-            Category
-          </label>
+          <div className="field">
+            <label htmlFor="category">
+              Category
+            </label>
 
-          <input
-            id="category"
-            type="text"
-            value={category}
-            onChange={(event) =>
-              setCategory(event.target.value)
-            }
-            required
-          />
+            <input
+              id="category"
+              type="text"
+              value={category}
+              onChange={(event) =>
+                setCategory(event.target.value)
+              }
+              placeholder="e.g. Food"
+              required
+            />
+          </div>
 
-          <label htmlFor="date">
-            Date
-          </label>
+          <div className="field">
+            <label htmlFor="date">
+              Date
+            </label>
 
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(event) =>
-              setDate(event.target.value)
-            }
-            required
-          />
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(event) =>
+                setDate(event.target.value)
+              }
+              required
+            />
+          </div>
 
-          <label htmlFor="note">
-            Note
-          </label>
+          <div className="field">
+            <label htmlFor="note">
+              Note <span className="field-optional">(optional)</span>
+            </label>
 
-          <input
-            id="note"
-            type="text"
-            value={note}
-            onChange={(event) =>
-              setNote(event.target.value)
-            }
-          />
+            <input
+              id="note"
+              type="text"
+              value={note}
+              onChange={(event) =>
+                setNote(event.target.value)
+              }
+              placeholder="Add a note"
+            />
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Adding..."
-              : "Add Expense"}
-          </button>
-          {editingExpenseId !== null && (
+          <div className="form-actions">
             <button
-              type="button"
-              onClick={handleCancelEdit}
+              type="submit"
+              className="btn btn--primary"
               disabled={loading}
             >
-              Cancel
+              {loading
+                ? editingExpenseId !== null
+                  ? "Saving…"
+                  : "Adding…"
+                : editingExpenseId !== null
+                  ? "Save Changes"
+                  : "Add Expense"}
             </button>
-          )}
+            {editingExpenseId !== null && (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={handleCancelEdit}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       </section>
+
       <section className="filters">
         <h2>Filter Expenses</h2>
 
-        <label htmlFor="filter-month">
-          Month
-        </label>
+        <div className="filters-row">
+          <label htmlFor="filter-month">
+            Month
+            <input
+              id="filter-month"
+              type="month"
+              value={filterMonth}
+              onChange={(event) =>
+                setFilterMonth(event.target.value)
+              }
+            />
+          </label>
 
-        <input
-          id="filter-month"
-          type="month"
-          value={filterMonth}
-          onChange={(event) =>
-            setFilterMonth(event.target.value)
-          }
-        />
+          <label htmlFor="filter-category">
+            Category
+            <input
+              id="filter-category"
+              type="text"
+              placeholder="e.g. Food"
+              value={filterCategory}
+              onChange={(event) =>
+                setFilterCategory(event.target.value)
+              }
+            />
+          </label>
 
-        <label htmlFor="filter-category">
-          Category
-        </label>
-
-        <input
-          id="filter-category"
-          type="text"
-          placeholder="e.g. Food"
-          value={filterCategory}
-          onChange={(event) =>
-            setFilterCategory(event.target.value)
-          }
-        />
-
-        <button
-          type="button"
-          onClick={() => {
-            setFilterMonth("");
-            setFilterCategory("");
-          }}
-        >
-          Clear Filters
-        </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              setFilterMonth("");
+              setFilterCategory("");
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
       </section>
+
       {summary && (
         <section className="summary">
           <h2>
             Expense Summary
-            {filterMonth ? ` - ${filterMonth}` : ""}
+            {filterMonth ? ` — ${filterMonth}` : ""}
           </h2>
 
           <div className="summary-stats">
-            <div>
+            <div className="stat-card">
               <strong>Total</strong>
               <p>₹{summary.total.toFixed(2)}</p>
             </div>
 
-            <div>
+            <div className="stat-card">
               <strong>Expenses</strong>
               <p>{summary.count}</p>
             </div>
 
-            <div>
+            <div className="stat-card">
               <strong>Average</strong>
               <p>₹{summary.average.toFixed(2)}</p>
             </div>
 
-            <div>
+            <div className="stat-card">
               <strong>Highest</strong>
               <p>₹{summary.highest.toFixed(2)}</p>
             </div>
@@ -523,7 +674,7 @@ function App() {
           <h3>By Category</h3>
 
           {summary.byCategory.length === 0 ? (
-            <p>No expenses found for this month.</p>
+            <p className="muted">No expenses found for this month.</p>
           ) : (
             <div className="category-summary">
               {summary.byCategory.map((item) => (
@@ -531,11 +682,23 @@ function App() {
                   className="category-summary-row"
                   key={item.category}
                 >
-                  <span>{item.category}</span>
-
-                  <span>
-                    ₹{item.total.toFixed(2)}
-                  </span>
+                  <div className="category-summary-head">
+                    <span>{item.category}</span>
+                    <span className="mono">
+                      ₹{item.total.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="category-bar-track">
+                    <div
+                      className="category-bar-fill"
+                      style={{
+                        width:
+                          maxCategoryTotal > 0
+                            ? `${(item.total / maxCategoryTotal) * 100}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -543,15 +706,28 @@ function App() {
         </section>
       )}
 
-      {loading && (<p>Loading expenses...</p>
+      {loading && (
+        <div className="state-card">
+          <span className="spinner" aria-hidden="true" />
+          <p>Loading expenses…</p>
+        </div>
       )}
 
       {error && (
-        <p className="error">{error}</p>
+        <p className="error" role="alert">
+          <span className="error-icon" aria-hidden="true">!</span>
+          {error}
+        </p>
       )}
 
       {!loading && !error && expenses.length === 0 && (
         <section className="empty-state">
+          <div className="empty-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
           <h2>No expenses found</h2>
           <p>
             Add your first expense to get started.
@@ -577,40 +753,54 @@ function App() {
                 className="expense-row"
                 key={expense.id}
               >
-                <span>
+                <span data-label="Date">
                   {new Date(
                     expense.date,
                   ).toLocaleDateString()}
                 </span>
 
-                <span>
-                  {expense.category}
+                <span data-label="Category">
+                  <span className="category-chip">
+                    {expense.category}
+                  </span>
                 </span>
 
-                <span>
-                  {expense.note || "-"}
+                <span data-label="Note" className="note-cell">
+                  {expense.note || "—"}
                 </span>
 
-                <span>
+                <span data-label="Amount" className="mono amount-cell">
                   ₹
                   {Number(
                     expense.amount,
                   ).toFixed(2)}
                 </span>
 
-                <span>
+                <span data-label="Actions" className="actions-cell">
                   <button
                     type="button"
+                    className="icon-btn"
                     onClick={() => handleEditExpense(expense)}
                     disabled={loading}
+                    aria-label="Edit expense"
                   >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Edit
                   </button>
                   <button
                     type="button"
+                    className="icon-btn icon-btn--danger"
                     onClick={() => handleDeleteExpense(expense.id)}
                     disabled={loading}
+                    aria-label="Delete expense"
                   >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Delete
                   </button>
                 </span>
