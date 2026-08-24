@@ -18,3 +18,27 @@ export interface ExpensesResponse {
         totalPages: number;
     };
 }
+export interface CategorySummary {
+    category: string;
+    total: number;
+}
+
+export interface ExpenseSummary {
+    total: number;
+    count: number;
+    average: number;
+    highest: number;
+    byCategory: CategorySummary[];
+}
+export interface CategorySummary {
+    category: string;
+    total: number;
+}
+
+export interface ExpenseSummary {
+    total: number;
+    count: number;
+    average: number;
+    highest: number;
+    byCategory: CategorySummary[];
+}

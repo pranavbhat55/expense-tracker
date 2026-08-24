@@ -5,17 +5,22 @@ import {
   createExpense,
   deleteExpense,
   getExpenses,
+  getExpenseSummary,
   updateExpense,
 } from "./api/expenses";
-import type { Expense } from "./types/expense";
+import type { Expense, ExpenseSummary } from "./types/expense";
 import "./App.css";
 
 function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [summary, setSummary] =
+    useState<ExpenseSummary | null>(null);
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
   const [editingExpenseId, setEditingExpenseId] =
     useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,14 +38,31 @@ function App() {
     }
 
     loadExpenses();
-  }, []);
+    loadSummary();
+  }, [filterMonth, filterCategory]);
+
+  async function loadSummary() {
+    try {
+      const response = await getExpenseSummary(
+        filterMonth || undefined,
+      );
+
+      setSummary(response);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to load expense summary");
+    }
+  }
 
   async function loadExpenses() {
     setLoading(true);
     setError("");
 
     try {
-      const response = await getExpenses();
+      const response = await getExpenses(
+        filterMonth || undefined,
+        filterCategory || undefined,
+      );
       setExpenses(response.data);
     } catch (error) {
       console.error(error);
@@ -352,9 +374,99 @@ function App() {
           )}
         </form>
       </section>
+      <section className="filters">
+        <h2>Filter Expenses</h2>
 
-      {loading && (
-        <p>Loading expenses...</p>
+        <label htmlFor="filter-month">
+          Month
+        </label>
+
+        <input
+          id="filter-month"
+          type="month"
+          value={filterMonth}
+          onChange={(event) =>
+            setFilterMonth(event.target.value)
+          }
+        />
+
+        <label htmlFor="filter-category">
+          Category
+        </label>
+
+        <input
+          id="filter-category"
+          type="text"
+          placeholder="e.g. Food"
+          value={filterCategory}
+          onChange={(event) =>
+            setFilterCategory(event.target.value)
+          }
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            setFilterMonth("");
+            setFilterCategory("");
+          }}
+        >
+          Clear Filters
+        </button>
+      </section>
+      {summary && (
+        <section className="summary">
+          <h2>
+            Expense Summary
+            {filterMonth ? ` - ${filterMonth}` : ""}
+          </h2>
+
+          <div className="summary-stats">
+            <div>
+              <strong>Total</strong>
+              <p>₹{summary.total.toFixed(2)}</p>
+            </div>
+
+            <div>
+              <strong>Expenses</strong>
+              <p>{summary.count}</p>
+            </div>
+
+            <div>
+              <strong>Average</strong>
+              <p>₹{summary.average.toFixed(2)}</p>
+            </div>
+
+            <div>
+              <strong>Highest</strong>
+              <p>₹{summary.highest.toFixed(2)}</p>
+            </div>
+          </div>
+
+          <h3>By Category</h3>
+
+          {summary.byCategory.length === 0 ? (
+            <p>No expenses found for this month.</p>
+          ) : (
+            <div className="category-summary">
+              {summary.byCategory.map((item) => (
+                <div
+                  className="category-summary-row"
+                  key={item.category}
+                >
+                  <span>{item.category}</span>
+
+                  <span>
+                    ₹{item.total.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {loading && (<p>Loading expenses...</p>
       )}
 
       {error && (

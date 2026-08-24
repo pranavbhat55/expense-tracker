@@ -4,7 +4,7 @@ import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
-const app = express();
+export const app = express();
 
 app.use(
     cors({
@@ -30,6 +30,10 @@ app.get("/test-error", () => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+    app.listen(PORT, () => {
+        console.log(
+            `Server running on http://localhost:${PORT}`,
+        );
+    });
+}

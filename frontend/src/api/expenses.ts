@@ -1,15 +1,32 @@
 import type {
     ExpensesResponse,
+    ExpenseSummary,
     Expense,
 } from "../types/expense";
 
 const API_URL = "http://localhost:3000";
 
-export async function getExpenses(): Promise<ExpensesResponse> {
+export async function getExpenses(
+    month?: string,
+    category?: string,
+): Promise<ExpensesResponse> {
     const token = localStorage.getItem("token");
 
+    const params = new URLSearchParams({
+        page: "1",
+        limit: "100",
+    });
+
+    if (month) {
+        params.set("month", month);
+    }
+
+    if (category) {
+        params.set("category", category);
+    }
+
     const response = await fetch(
-        `${API_URL}/expenses?page=1&limit=100`,
+        `${API_URL}/expenses?${params.toString()}`,
         {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -107,4 +124,35 @@ export async function deleteExpense(
     if (!response.ok) {
         throw new Error("Failed to delete expense");
     }
+}
+export async function getExpenseSummary(
+    month?: string,
+): Promise<ExpenseSummary> {
+    const token = localStorage.getItem("token");
+
+    const params = new URLSearchParams();
+
+    if (month) {
+        params.set("month", month);
+    }
+
+    const query = params.toString();
+
+    const response = await fetch(
+        `${API_URL}/expenses/summary${query ? `?${query}` : ""
+        }`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error(
+            "Failed to fetch expense summary",
+        );
+    }
+
+    return response.json();
 }
