@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { login } from "./api/auth";
+import {
+  login,
+  register,
+} from "./api/auth";
 import {
   createExpense,
   deleteExpense,
@@ -28,6 +31,9 @@ function App() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [isRegistering, setIsRegistering] =
+    useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -91,6 +97,37 @@ function App() {
         setError(error.message);
       } else {
         setError("Failed to login");
+      }
+
+      setLoading(false);
+    }
+  }
+  async function handleRegister(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await register(
+        name,
+        email,
+        password,
+      );
+
+      localStorage.setItem(
+        "token",
+        response.token,
+      );
+
+      await loadExpenses();
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Failed to create account");
       }
 
       setLoading(false);
@@ -218,7 +255,9 @@ function App() {
           <h1>Expense Tracker</h1>
 
           <p className="login-subtitle">
-            Sign in to manage your expenses
+            {isRegistering
+              ? "Create an account to start tracking expenses"
+              : "Sign in to manage your expenses"}
           </p>
 
           {error && (
@@ -227,7 +266,29 @@ function App() {
             </p>
           )}
 
-          <form onSubmit={handleLogin}>
+          <form
+            onSubmit={
+              isRegistering
+                ? handleRegister
+                : handleLogin
+            }
+          >{isRegistering && (
+            <>
+              <label htmlFor="name">
+                Name
+              </label>
+
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
+                required
+              />
+            </>
+          )}
             <label htmlFor="email">
               Email
             </label>
@@ -260,11 +321,27 @@ function App() {
               type="submit"
               disabled={loading}
             >
-              {loading
-                ? "Signing in..."
-                : "Sign In"}
+              {loading ? isRegistering
+                ? "Creating account..."
+                : "Signing in..."
+                : isRegistering
+                  ? "Create Account"
+                  : "Sign In"}
+
             </button>
           </form>
+          <button
+            type="button"
+            className="auth-toggle"
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setError("");
+            }}
+          >
+            {isRegistering
+              ? "Already have an account? Sign In"
+              : "New here? Create an account"}
+          </button>
         </section>
       </main>
     );
