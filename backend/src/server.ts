@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import budgetRoutes from "./routes/budget.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -21,6 +22,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/expenses", expenseRoutes);
+app.use("/budgets", budgetRoutes);
 
 app.use("/auth", authRoutes);
 
