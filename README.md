@@ -1,8 +1,12 @@
 # Expense Tracker
 
-A full-stack Expense Tracker application for managing personal expenses. Users can register, log in, create, update, delete, filter, and review their expenses through a React frontend and Express backend.
+A full-stack Expense Tracker application for managing personal expenses through a modern React dashboard and REST API backend.
+
+Users can register, log in, create, update, delete, filter, analyze, and export their expenses. The dashboard also provides spending charts and monthly category budgets.
 
 ## Features
+
+### Core Features
 
 - User registration
 - User login
@@ -14,15 +18,34 @@ A full-stack Expense Tracker application for managing personal expenses. Users c
 - Delete expenses
 - Filter expenses by month
 - Filter expenses by category
-- Expense summary
+- Clear filters
+- Monthly expense summary
 - Total expense calculation
 - Average expense calculation
 - Highest expense calculation
 - Category-wise expense totals
 - Input validation
+- Future-date validation
 - Error handling
-- Backend API tests
+- Loading states
+- Empty states
+
+### Additional Features
+
+- Spending-by-category chart
+- Monthly budgets per category
+- Edit monthly budgets
+- Delete monthly budgets
+- Budget progress tracking
+- Remaining budget calculation
+- Over-budget highlighting
+- CSV export of filtered expenses
+- Pagination
+- Infinite scrolling
+- Responsive dashboard UI
+- Pastel/beige themed interface
 - Frontend UI interaction tests
+- Backend API tests
 
 ## Tech Stack
 
@@ -33,6 +56,7 @@ A full-stack Expense Tracker application for managing personal expenses. Users c
 - Vite
 - Vitest
 - React Testing Library
+- Recharts
 
 ### Backend
 
@@ -52,315 +76,394 @@ A full-stack Expense Tracker application for managing personal expenses. Users c
 expense-tracker/
 ├── backend/
 │   ├── prisma/
+│   │   ├── migrations/
+│   │   └── schema.prisma
 │   ├── src/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── server.ts
 │   └── package.json
 ├── frontend/
 │   ├── src/
+│   │   ├── api/
+│   │   ├── tests/
+│   │   ├── App.tsx
+│   │   ├── App.css
+│   │   └── main.tsx
 │   └── package.json
 ├── .gitignore
 └── README.md
-```
-
-## Prerequisites
+Prerequisites
 
 Before running the project, install:
 
-- Node.js
-- npm
-- PostgreSQL
+Node.js
+npm
+PostgreSQL
 
-## Database Setup
+Make sure PostgreSQL is running before starting the backend.
 
-This project uses PostgreSQL with Prisma.
+Database Setup
 
-### 1. Create a PostgreSQL database
+The backend uses PostgreSQL with Prisma.
 
-Create a database named `expense_tracker`:
+1. Create the PostgreSQL database
 
-```sql
+Create a database named:
+
+expense_tracker
+
+For example:
+
 CREATE DATABASE expense_tracker;
-```
 
-You may use a different database name if you update the connection string accordingly.
+You may use a different database name if you update the database connection string.
 
-### 2. Configure environment variables
+2. Configure environment variables
 
-Inside the `backend` folder, create a file named:
+Inside the backend folder, create:
 
-```text
 .env
-```
 
-Add your database connection and JWT secret:
+Add:
 
-```env
 DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/expense_tracker"
 JWT_SECRET="your_secret_key"
-```
 
 Replace:
 
-- `USERNAME` with your PostgreSQL username.
-- `PASSWORD` with your PostgreSQL password.
-- `expense_tracker` with your database name if different.
-- `your_secret_key` with a secure secret.
+USERNAME with your PostgreSQL username
+PASSWORD with your PostgreSQL password
+expense_tracker with your database name if different
+your_secret_key with a secure JWT secret
 
-Do not commit your `.env` file to Git.
+Do not commit the .env file to Git.
 
-### 3. Install backend dependencies
-
-```bash
+3. Install backend dependencies
 cd backend
 npm install
-```
-
-### 4. Generate Prisma client
-
-```bash
+4. Generate Prisma client
 npx prisma generate
-```
-
-### 5. Apply database migrations
-
-```bash
+5. Apply database migrations
 npx prisma migrate dev
-```
-
-## Backend Setup
+Backend Setup
 
 From the project root:
 
-```bash
 cd backend
 npm install
 npm run dev
-```
 
 The backend runs at:
 
-```text
 http://localhost:3000
-```
+Health Check
 
-You can verify that the backend is running by visiting:
+You can verify that the backend is running at:
 
-```text
 http://localhost:3000/health
-```
 
 Expected response:
 
-```json
 {
   "status": "ok"
 }
-```
-
-## Frontend Setup
+Frontend Setup
 
 Open another terminal and run:
 
-```bash
 cd frontend
 npm install
 npm run dev
-```
 
-The frontend runs at:
+The frontend normally runs at:
 
-```text
 http://localhost:5173
-```
 
-## How to Use
+Open the displayed Vite URL in your browser.
 
-1. Start PostgreSQL.
-2. Start the backend with:
-
-```bash
+How to Use
+Start PostgreSQL.
+Start the backend:
 cd backend
 npm run dev
-```
-
-3. Start the frontend in another terminal:
-
-```bash
+Open another terminal.
+Start the frontend:
 cd frontend
 npm run dev
-```
+Open the frontend in your browser.
+Register a new account.
+Log in with your account.
+Add an expense.
+View your expenses in the dashboard.
+Edit an existing expense.
+Delete an expense.
+Filter expenses by month.
+Filter expenses by category.
+Clear the filters when needed.
+Review the monthly expense summary.
+View the spending-by-category chart.
+Create a monthly budget for a category.
+Edit or delete an existing budget.
+Monitor budget progress.
+Review over-budget warnings.
+Export filtered expenses as a CSV file.
+Continue scrolling to load additional expenses.
+Expense Features
 
-4. Open:
+Each expense can contain:
 
-```text
-http://localhost:5173
-```
+Amount
+Category
+Date
+Optional note
 
-5. Register a new user.
-6. Log in with your registered credentials.
-7. Add expenses.
-8. Edit existing expenses.
-9. Delete expenses.
-10. Filter expenses by month or category.
-11. View the expense summary.
+The application supports:
 
-## Expense Features
+Creating expenses
+Viewing expenses
+Viewing individual expenses through the API
+Updating expenses
+Deleting expenses
 
-The application supports the following expense operations:
+Expenses are displayed with the most recent expenses first.
 
-- Create an expense
-- View all expenses
-- View an individual expense
-- Update an expense
-- Delete an expense
+Expense Validation
 
-Each expense can include:
+The application validates expense data on the backend.
 
-- Amount
-- Category
-- Date
-- Optional note
+Validation includes:
 
-## Filtering
+Amount must be greater than zero
+Category is required
+Date must be valid
+Date cannot be in the future
+Month filters must use YYYY-MM format
+Category filters cannot be empty
+Pagination values are validated
+
+The frontend also provides immediate feedback for invalid input where applicable.
+
+Filtering
 
 Expenses can be filtered by:
 
-- Month
-- Category
+Month
 
-Filters can also be cleared to return to the full expense list.
+Example:
 
-## Expense Summary
+2026-08
+Category
 
-The application provides an expense summary containing:
+Example:
 
-- Total expenses
-- Number of expenses
-- Average expense amount
-- Highest expense amount
-- Category-wise totals
+Food
 
-## Authentication
+Filters can be combined and cleared to return to the full expense list.
+
+Expense Summary
+
+The dashboard provides a monthly expense summary containing:
+
+Total expenses
+Number of expenses
+Average expense amount
+Highest expense amount
+Category-wise spending totals
+
+When a month is selected, the summary reflects the selected month.
+
+Spending Chart
+
+The dashboard includes a spending-by-category chart.
+
+The chart provides a visual breakdown of spending across expense categories for the selected month.
+
+Changing the selected month updates the displayed spending information.
+
+Monthly Budgets
+
+Users can set monthly spending limits for individual categories.
+
+Budget functionality includes:
+
+Create a monthly budget
+Edit a monthly budget
+Delete a monthly budget
+Track category spending against the budget
+Display the amount spent
+Display the budget amount
+Display the remaining budget
+Display budget progress
+Highlight categories when spending exceeds the budget
+
+When spending exceeds a category's monthly budget, the dashboard displays an over-budget warning.
+
+CSV Export
+
+Expenses can be exported as a CSV file.
+
+The export uses the currently selected expense filters.
+
+Supported filters include:
+
+Month
+Category
+
+The CSV contains:
+
+Date
+Category
+Note
+Amount
+Pagination and Infinite Scrolling
+
+Expenses are loaded in pages rather than loading the entire expense history at once.
+
+As the user reaches the bottom of the expense list, additional expenses are automatically loaded.
+
+This helps keep the application responsive when there are many expenses.
+
+Authentication
 
 The application includes:
 
-- User registration
-- User login
-- JWT-based authentication
-- Protected expense routes
+User registration
+User login
+JWT-based authentication
+Protected expense routes
+Protected budget routes
 
-Users must be authenticated before accessing expense-related API endpoints.
+Users must be authenticated before accessing protected expense and budget functionality.
 
-## API Endpoints
-
-### Health
-
-```text
+API Endpoints
+Health
 GET /health
-```
-
-### Authentication
-
-```text
+Authentication
 POST /auth/register
 POST /auth/login
-```
-
-### Expenses
-
-```text
+Expenses
 GET /expenses
 POST /expenses
 GET /expenses/:id
 PUT /expenses/:id
 DELETE /expenses/:id
-```
-
-Expenses can be queried with filters such as:
-
-```text
+Expense Filters
 GET /expenses?month=2026-08
 GET /expenses?category=Food
-```
 
-### Expense Summary
+Filters can also be combined where supported.
 
-```text
+Expense Summary
 GET /expenses/summary
-```
 
-A month can be supplied when supported:
+Example:
 
-```text
 GET /expenses/summary?month=2026-08
-```
+Budgets
+GET /budgets
+POST /budgets
+PUT /budgets/:id
+DELETE /budgets/:id
 
-## Running Tests
+Example:
 
-### Backend Tests
+GET /budgets?month=2026-08
 
-From the `backend` directory:
+Budget endpoints require authentication.
 
-```bash
+Running Tests
+Frontend Tests
+
+From the frontend directory:
+
 npm test
-```
 
-The backend tests currently cover:
+The frontend test suite covers UI interactions and application behavior.
 
-- Health API success response
-- Unauthorized expense access
-- Invalid login credentials
+Backend Tests
 
-### Frontend Tests
+From the backend directory:
 
-From the `frontend` directory:
-
-```bash
 npm test
-```
 
-The frontend test currently covers:
+Backend tests cover API behavior and validation/authentication scenarios included in the test suite.
 
-- Entering an email address
-- Entering a password
-
-## Production Builds
-
-### Backend
-
-```bash
+Production Builds
+Backend
 cd backend
 npm run build
-```
-
-### Frontend
-
-```bash
+Frontend
 cd frontend
 npm run build
-```
 
-## Development
+A successful frontend build may display a Vite bundle-size warning for large JavaScript chunks. This is a warning and does not indicate a failed build.
+
+Development
 
 To run the complete application locally:
 
-### Terminal 1 — Backend
-
-```bash
+Terminal 1 — Backend
 cd backend
 npm run dev
-```
-
-### Terminal 2 — Frontend
-
-```bash
+Terminal 2 — Frontend
 cd frontend
 npm run dev
-```
+Optional — Prisma Studio
 
-### Terminal 3 — Optional database management
+From the backend directory:
 
-Use PostgreSQL or Prisma tools as needed.
+npx prisma studio
 
-## Author
+This can be used to inspect the development database.
+
+Environment Variables
+
+The backend requires environment variables for local development.
+
+Example:
+
+DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/expense_tracker"
+JWT_SECRET="your_secret_key"
+
+Never commit real credentials or secrets to the repository.
+
+Error Handling
+
+The application provides feedback for common errors, including:
+
+Invalid login credentials
+Invalid expense data
+Invalid budget data
+Future expense dates
+Failed API requests
+Failed expense operations
+Failed budget operations
+Empty expense results
+Loading states
+Responsive Design
+
+The frontend is designed to work across:
+
+Desktop
+Tablet
+Mobile
+
+The dashboard, forms, summary cards, budgets, chart, filters, and expense list adapt to smaller screen sizes.
+
+Git Workflow
+
+Development work is performed on feature branches.
+
+The final Expense Tracker implementation is available on:
+
+feature/expense-tracker
+
+The project is submitted through a pull request targeting:
+
+main
+Author
 
 Pranav
