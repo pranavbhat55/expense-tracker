@@ -18,6 +18,7 @@ model User {
   email     String    @unique
   password  String
   expenses  Expense[]
+  budgets   Budget[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -33,4 +34,17 @@ model Expense {
 
   userId Int
   user   User @relation(fields: [userId], references: [id])
+}
+model Budget {
+  id        Int      @id @default(autoincrement())
+  amount    Decimal
+  category  String
+  month     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month, category])
 }
