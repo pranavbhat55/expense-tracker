@@ -2,6 +2,7 @@ import { prisma } from "./prisma.js";
 
 export async function createBudget(
     userId: number,
+    tenantId: number,
     data: {
         amount: number;
         category: string;
@@ -14,17 +15,20 @@ export async function createBudget(
             category: data.category,
             month: data.month,
             userId,
+            tenantId,
         },
     });
 }
 
 export async function getBudgets(
     userId: number,
+    tenantId: number,
     month?: string,
 ) {
     return prisma.budget.findMany({
         where: {
             userId,
+            tenantId,
             ...(month ? { month } : {}),
         },
         orderBy: {
@@ -36,11 +40,13 @@ export async function getBudgets(
 export async function getBudgetById(
     id: number,
     userId: number,
+    tenantId: number,
 ) {
     return prisma.budget.findFirst({
         where: {
             id,
             userId,
+            tenantId,
         },
     });
 }
@@ -48,6 +54,7 @@ export async function getBudgetById(
 export async function updateBudget(
     id: number,
     userId: number,
+    tenantId: number,
     data: {
         amount: number;
         category: string;
@@ -57,6 +64,7 @@ export async function updateBudget(
     const existingBudget = await getBudgetById(
         id,
         userId,
+        tenantId,
     );
 
     if (!existingBudget) {
@@ -78,10 +86,12 @@ export async function updateBudget(
 export async function deleteBudget(
     id: number,
     userId: number,
+    tenantId: number,
 ) {
     const existingBudget = await getBudgetById(
         id,
         userId,
+        tenantId,
     );
 
     if (!existingBudget) {

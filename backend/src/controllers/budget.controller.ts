@@ -14,11 +14,15 @@ export async function createBudgetController(
     try {
         const { amount, category, month } = req.body;
 
-        const budget = await createBudget(req.userId, {
-            amount,
-            category,
-            month,
-        });
+        const budget = await createBudget(
+            req.userId,
+            req.tenantId,
+            {
+                amount,
+                category,
+                month,
+            },
+        );
 
         return res.status(201).json(budget);
     } catch (error) {
@@ -42,6 +46,7 @@ export async function getBudgetsController(
 
         const budgets = await getBudgets(
             req.userId,
+            req.tenantId,
             month,
         );
 
@@ -71,6 +76,7 @@ export async function updateBudgetController(
         const existingBudget = await getBudgetById(
             id,
             req.userId,
+            req.tenantId,
         );
 
         if (!existingBudget) {
@@ -84,6 +90,7 @@ export async function updateBudgetController(
         const budget = await updateBudget(
             id,
             req.userId,
+            req.tenantId,
             {
                 amount,
                 category,
@@ -117,6 +124,7 @@ export async function deleteBudgetController(
         const existingBudget = await getBudgetById(
             id,
             req.userId,
+            req.tenantId,
         );
 
         if (!existingBudget) {
@@ -125,7 +133,11 @@ export async function deleteBudgetController(
             });
         }
 
-        await deleteBudget(id, req.userId);
+        await deleteBudget(
+            id,
+            req.userId,
+            req.tenantId,
+        );
 
         return res.status(204).send();
     } catch (error) {

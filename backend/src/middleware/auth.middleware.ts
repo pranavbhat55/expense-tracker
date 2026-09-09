@@ -6,6 +6,7 @@ import { jwtSecret } from "../config/env.js";
 interface JwtPayload {
     userId: number;
     email: string;
+    tenantId: number;
 }
 
 export function authenticate(
@@ -26,21 +27,23 @@ export function authenticate(
             throw new AppError("Authentication required", 401);
         }
 
-        const decoded = jwt.verify(
-            token,
-            jwtSecret
-        );
+        const decoded = jwt.verify(token, jwtSecret);
 
         if (
             typeof decoded !== "object" ||
             decoded === null ||
             !("userId" in decoded) ||
-            typeof decoded.userId !== "number"
+            typeof decoded.userId !== "number" ||
+            !("tenantId" in decoded) ||
+            typeof decoded.tenantId !== "number"
         ) {
             throw new AppError("Invalid token", 401);
         }
 
-        req.userId = decoded.userId;
+        const payload = decoded as JwtPayload;
+
+        req.userId = payload.userId;
+        req.tenantId = payload.tenantId;
 
         next();
     } catch (error) {
