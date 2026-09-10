@@ -7,15 +7,29 @@ datasource db {
   provider = "postgresql"
 }
 
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  EXPIRED
+  CANCELLED
+}
+
 model Tenant {
   id        Int      @id @default(autoincrement())
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users    User[]
-  expenses Expense[]
-  budgets  Budget[]
+  users        User[]
+  expenses     Expense[]
+  budgets      Budget[]
+  subscription Subscription?
 }
 
 model User {
@@ -73,4 +87,24 @@ model Budget {
   @@unique([userId, month, category])
   @@index([tenantId])
   @@index([tenantId, month])
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+
+  tenantId  Int      @unique
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  plan      SubscriptionPlan
+  status    SubscriptionStatus
+
+  licenseKey String   @unique
+  startsAt   DateTime
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([expiresAt])
 }

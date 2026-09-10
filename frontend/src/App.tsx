@@ -1,4 +1,4 @@
-import {
+﻿import {
   BarChart,
   Bar,
   XAxis,
@@ -37,6 +37,10 @@ import type {
   Expense,
   ExpenseSummary,
 } from "./types/expense";
+
+import type { TimelineReport } from "./types/report";
+import { getTimelineReport } from "./api/reports";
+
 
 import "./App.css";
 
@@ -117,6 +121,21 @@ function App() {
   const [summary, setSummary] =
     useState<ExpenseSummary | null>(null);
 
+  const [timelineReport, setTimelineReport] =
+    useState<TimelineReport | null>(null);
+
+  const [timelineFrom, setTimelineFrom] =
+    useState("2026-08-01");
+
+  const [timelineTo, setTimelineTo] =
+    useState("2026-09-01");
+
+  const [timelineGroupBy, setTimelineGroupBy] =
+    useState<"day" | "week" | "month">("day");
+
+  const [timelineLoading, setTimelineLoading] =
+    useState(false);
+
   const [amount, setAmount] = useState("");
   const [category, setCategory] =
     useState("");
@@ -193,6 +212,27 @@ function App() {
       setError(
         "Failed to load expense summary",
       );
+    }
+  }
+
+  async function loadTimelineReport() {
+    try {
+      setTimelineLoading(true);
+
+      const response = await getTimelineReport(
+        timelineFrom,
+        timelineTo,
+        timelineGroupBy,
+      );
+
+      setTimelineReport(response);
+    } catch (error) {
+      console.error(
+        "Failed to load timeline report:",
+        error,
+      );
+    } finally {
+      setTimelineLoading(false);
     }
   }
 
@@ -294,6 +334,7 @@ function App() {
     loadExpenses(1);
     loadSummary();
     loadBudgets();
+    loadTimelineReport();
   }, [filterMonth, filterCategory]);
 
   async function handleLogin(
@@ -1244,6 +1285,155 @@ function App() {
           </section>
         )}
 
+      <section className="chart-card">
+        <div className="chart-header">
+          <div>
+            <h2>Timeline Report</h2>
+            <p>
+              Track spending over your selected date range.
+            </p>
+          </div>
+        </div>
+
+        <div className="timeline-controls">
+          <label htmlFor="timeline-from">
+            From
+          </label>
+
+          <input
+            id="timeline-from"
+            type="date"
+            value={timelineFrom}
+            onChange={(event) =>
+              setTimelineFrom(event.target.value)
+            }
+          />
+
+          <label htmlFor="timeline-to">
+            To
+          </label>
+
+          <input
+            id="timeline-to"
+            type="date"
+            value={timelineTo}
+            onChange={(event) =>
+              setTimelineTo(event.target.value)
+            }
+          />
+
+          <label htmlFor="timeline-group">
+            Group by
+          </label>
+
+          <select
+            id="timeline-group"
+            value={timelineGroupBy}
+            onChange={(event) =>
+              setTimelineGroupBy(
+                event.target.value as
+                | "day"
+                | "week"
+                | "month",
+              )
+            }
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={loadTimelineReport}
+            disabled={timelineLoading}
+          >
+            {timelineLoading
+              ? "Generating..."
+              : "Generate Report"}
+          </button>
+        </div>
+
+        {timelineReport && (
+          <>
+            <div className="summary-stats">
+              <div>
+                <strong>Total Spent</strong>
+                <p>
+                  ₹{timelineReport.total.toFixed(2)}
+                </p>
+                <small>Selected date range</small>
+              </div>
+
+              <div>
+                <strong>Transactions</strong>
+                <p>{timelineReport.count}</p>
+                <small>Expenses recorded</small>
+              </div>
+            </div>
+
+            {timelineReport.timeline.length > 0 ? (
+              <div className="chart-container">
+                <ResponsiveContainer
+                  width="100%"
+                  height={320}
+                >
+                  <BarChart
+                    data={timelineReport.timeline}
+                    margin={{
+                      top: 10,
+                      right: 20,
+                      left: 10,
+                      bottom: 10,
+                    }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                    />
+
+                    <XAxis
+                      dataKey="date"
+                      tick={{
+                        fontSize: 12,
+                      }}
+                    />
+
+                    <YAxis
+                      tick={{
+                        fontSize: 13,
+                      }}
+                    />
+
+                    <Tooltip
+                      formatter={(value) =>
+                        `₹${Number(value).toFixed(2)}`
+                      }
+                    />
+
+                    <Bar
+                      dataKey="total"
+                      name="Spending"
+                      radius={[
+                        6,
+                        6,
+                        0,
+                        0,
+                      ]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="chart-empty">
+                <p>
+                  No expenses found for this date range.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       <div className="chart-card">
         <div className="chart-header">
           <div>
@@ -1441,3 +1631,4 @@ function App() {
 }
 
 export default App;
+
