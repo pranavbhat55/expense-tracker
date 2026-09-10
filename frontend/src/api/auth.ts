@@ -6,6 +6,7 @@ interface AuthResponse {
         id: number;
         name: string;
         email: string;
+        role?: "OWNER" | "ADMIN" | "MEMBER";
     };
 }
 
@@ -42,6 +43,7 @@ export async function register(
     name: string,
     email: string,
     password: string,
+    workspaceSlug?: string,
 ): Promise<AuthResponse> {
     const response = await fetch(
         `${API_URL}/auth/register`,
@@ -54,6 +56,7 @@ export async function register(
                 name,
                 email,
                 password,
+                workspaceSlug: workspaceSlug || undefined,
             }),
         },
     );

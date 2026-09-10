@@ -26,6 +26,7 @@ app.get("/health", (_req, res) => {
 app.use("/expenses", expenseRoutes);
 app.use("/budgets", budgetRoutes);
 app.use("/subscription", subscriptionRoutes);
+app.use("/subscriptions", subscriptionRoutes);
 app.use("/reports", reportRoutes);
 
 app.use("/auth", authRoutes);

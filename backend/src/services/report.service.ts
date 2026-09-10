@@ -1,5 +1,6 @@
 import { prisma } from "./prisma.js";
 import { AppError } from "../utils/AppError.js";
+import { requireFeature } from "./entitlement.service.js";
 
 type GroupBy = "day" | "week" | "month";
 
@@ -38,6 +39,7 @@ export async function getTimelineReport(
     to: Date,
     groupBy: GroupBy,
 ) {
+    await requireFeature(tenantId, "timelineReports");
     if (from >= to) {
         throw new AppError(
             "The start date must be before the end date",

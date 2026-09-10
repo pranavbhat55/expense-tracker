@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { getTimelineReport } from "../services/report.service.js";
+import { AppError } from "../utils/AppError.js";
 
 export async function getTimelineReportController(
     req: Request,
@@ -65,15 +66,7 @@ export async function getTimelineReportController(
             error,
         );
 
-        if (
-            error instanceof Error &&
-            error.message ===
-                "The start date must be before the end date"
-        ) {
-            return res.status(400).json({
-                message: error.message,
-            });
-        }
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
 
         return res.status(500).json({
             message: "Failed to generate timeline report",

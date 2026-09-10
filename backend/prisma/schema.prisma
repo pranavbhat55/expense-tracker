@@ -20,9 +20,16 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 model Tenant {
   id        Int      @id @default(autoincrement())
   name      String
+  slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,6 +44,7 @@ model User {
   name      String
   email     String   @unique
   password  String
+  role      UserRole @default(MEMBER)
 
   tenantId  Int
   tenant    Tenant @relation(fields: [tenantId], references: [id])

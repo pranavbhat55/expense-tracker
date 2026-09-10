@@ -7,6 +7,7 @@
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+/* eslint-disable react-refresh/only-export-components, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 import {
   useCallback,
   useEffect,
@@ -40,6 +41,12 @@ import type {
 
 import type { TimelineReport } from "./types/report";
 import { getTimelineReport } from "./api/reports";
+import {
+  createSubscription,
+  getSubscription,
+  changeSubscription,
+  type Subscription,
+} from "./api/subscription";
 
 
 import "./App.css";
@@ -136,6 +143,21 @@ function App() {
   const [timelineLoading, setTimelineLoading] =
     useState(false);
 
+  const [subscription, setSubscription] =
+    useState<Subscription | null>(null);
+
+  const [subscriptionLoading, setSubscriptionLoading] =
+    useState(false);
+
+  const [subscriptionError, setSubscriptionError] =
+    useState("");
+
+  const [timelineError, setTimelineError] =
+    useState("");
+
+  const [selectedPlan, setSelectedPlan] =
+    useState<"FREE" | "PRO" | "BUSINESS">("PRO");
+
   const [amount, setAmount] = useState("");
   const [category, setCategory] =
     useState("");
@@ -162,6 +184,9 @@ function App() {
   const [password, setPassword] =
     useState("");
   const [name, setName] = useState("");
+
+  const [workspaceSlug, setWorkspaceSlug] =
+    useState("");
 
   const [isRegistering, setIsRegistering] =
     useState(false);
@@ -218,6 +243,7 @@ function App() {
   async function loadTimelineReport() {
     try {
       setTimelineLoading(true);
+      setTimelineError("");
 
       const response = await getTimelineReport(
         timelineFrom,
@@ -231,8 +257,70 @@ function App() {
         "Failed to load timeline report:",
         error,
       );
+      setTimelineReport(null);
+      setTimelineError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load the timeline report.",
+      );
     } finally {
       setTimelineLoading(false);
+    }
+  }
+
+  async function loadSubscription() {
+    try {
+      setSubscriptionError("");
+      const response = await getSubscription();
+      setSubscription(response);
+      setSelectedPlan(response.plan);
+    } catch (error) {
+      console.error(
+        "Failed to load subscription:",
+        error,
+      );
+
+      if (
+        error instanceof Error &&
+        error.message === "No subscription found"
+      ) {
+        setSubscription(null);
+        return;
+      }
+
+      setSubscriptionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load subscription",
+      );
+    }
+  }
+
+  async function handleSubscriptionChange() {
+    try {
+      setSubscriptionLoading(true);
+      setSubscriptionError("");
+
+      const response = subscription
+        ? await changeSubscription(selectedPlan)
+        : await createSubscription(selectedPlan);
+
+      setSubscription(response);
+      setSelectedPlan(response.plan);
+      await loadTimelineReport();
+    } catch (error) {
+      console.error(
+        "Failed to update subscription:",
+        error,
+      );
+
+      setSubscriptionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update subscription",
+      );
+    } finally {
+      setSubscriptionLoading(false);
     }
   }
 
@@ -335,6 +423,7 @@ function App() {
     loadSummary();
     loadBudgets();
     loadTimelineReport();
+    loadSubscription();
   }, [filterMonth, filterCategory]);
 
   async function handleLogin(
@@ -361,6 +450,8 @@ function App() {
       await loadExpenses();
       await loadSummary();
       await loadBudgets();
+      await loadTimelineReport();
+      await loadSubscription();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -385,6 +476,7 @@ function App() {
         name,
         email,
         password,
+        workspaceSlug,
       );
 
       localStorage.setItem(
@@ -397,6 +489,8 @@ function App() {
       await loadExpenses();
       await loadSummary();
       await loadBudgets();
+      await loadTimelineReport();
+      await loadSubscription();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -540,6 +634,11 @@ function App() {
   }
 
   function handleExportCsv() {
+    if (!subscription?.entitlements?.features.csvExport) {
+      setError("CSV export is not included in your current plan. Upgrade to PRO to export expenses.");
+      return;
+    }
+
     if (expenses.length === 0) {
       return;
     }
@@ -573,6 +672,10 @@ function App() {
     setExpenses([]);
     setSummary(null);
     setBudgets([]);
+    setTimelineReport(null);
+    setSubscription(null);
+    setSubscriptionError("");
+    setTimelineError("");
 
     setEmail("");
     setPassword("");
@@ -633,6 +736,20 @@ function App() {
                     )
                   }
                   required
+                />
+
+                <label htmlFor="workspace-slug">
+                  Workspace slug (optional)
+                </label>
+
+                <input
+                  id="workspace-slug"
+                  type="text"
+                  value={workspaceSlug}
+                  onChange={(event) =>
+                    setWorkspaceSlug(event.target.value)
+                  }
+                  placeholder="Leave empty to create a workspace"
                 />
               </>
             )}
@@ -701,6 +818,13 @@ function App() {
       </main>
     );
   }
+
+  const canManageSubscription = subscription?.role === "OWNER";
+  const canUseBudgets = subscription?.entitlements?.features.budgets ?? false;
+  const canUseTimeline = subscription?.entitlements?.features.timelineReports ?? false;
+  const canExportCsv = subscription?.entitlements?.features.csvExport ?? false;
+  const quota = subscription?.entitlements?.limits.maxExpensesPerMonth;
+  const usage = subscription?.entitlements?.usage?.expensesThisMonth;
 
   return (
     <main className="app">
@@ -888,10 +1012,21 @@ function App() {
           </div>
         </div>
 
+        {!canUseBudgets && subscription && (
+          <p className="feature-lock">
+            Budgets are not included in your current plan. Upgrade to PRO to manage category budgets.
+          </p>
+        )}
+
         <form
           className="budget-form"
           onSubmit={async (event) => {
             event.preventDefault();
+
+            if (!canUseBudgets) {
+              setError("Budgets are not included in your current plan. Upgrade to PRO to use this feature.");
+              return;
+            }
 
             const budgetValue =
               Number(budgetAmount);
@@ -955,6 +1090,7 @@ function App() {
             step="0.01"
             placeholder="Monthly budget"
             value={budgetAmount}
+            disabled={!canUseBudgets}
             onChange={(event) =>
               setBudgetAmount(
                 event.target.value,
@@ -966,6 +1102,7 @@ function App() {
             type="text"
             placeholder="Category"
             value={budgetCategory}
+            disabled={!canUseBudgets}
             onChange={(event) =>
               setBudgetCategory(
                 event.target.value,
@@ -978,6 +1115,7 @@ function App() {
             value={
               budgetMonth || filterMonth
             }
+            disabled={!canUseBudgets}
             onChange={(event) =>
               setBudgetMonth(
                 event.target.value,
@@ -987,7 +1125,7 @@ function App() {
 
           <button
             type="submit"
-            disabled={budgetLoading}
+            disabled={budgetLoading || !canUseBudgets}
           >
             {budgetLoading
               ? "Saving..."
@@ -1285,6 +1423,203 @@ function App() {
           </section>
         )}
 
+      <section className="subscription-section">
+        <div className="subscription-header">
+          <div>
+            <span className="subscription-eyebrow">
+              ACCOUNT PLAN
+            </span>
+            <h2>Subscription & Licensing</h2>
+            <p>
+              Manage your organization's plan and license.
+            </p>
+          </div>
+
+          {subscription && (
+            <span
+              className={`subscription-status ${subscription.status.toLowerCase()
+                }`}
+            >
+              <span className="subscription-status-dot" />
+              {subscription.status}
+            </span>
+          )}
+        </div>
+
+        {subscriptionError && (
+          <p className="error">{subscriptionError}</p>
+        )}
+
+        <div className="subscription-current">
+          <div>
+            <span className="subscription-label">
+              CURRENT PLAN
+            </span>
+            <strong>
+              {subscription
+                ? subscription.plan
+                : "No active plan"}
+            </strong>
+          </div>
+
+          {subscription && (
+            <div className="subscription-expiry">
+              <span className="subscription-label">
+                LICENSE EXPIRES
+              </span>
+              <strong>
+                {new Date(
+                  subscription.expiresAt,
+                ).toLocaleDateString()}
+              </strong>
+            </div>
+          )}
+        </div>
+
+        {subscription?.entitlements && (
+          <div className="entitlement-summary">
+            <span>
+              Monthly expenses: {usage ?? 0}{quota === null ? " / unlimited" : ` / ${quota ?? "—"}`}
+            </span>
+            <span>
+              Features: {subscription.entitlements.features.budgets ? "Budgets" : "No budgets"} · {subscription.entitlements.features.timelineReports ? "Timeline reports" : "No timeline reports"} · {subscription.entitlements.features.csvExport ? "CSV export" : "No CSV export"}
+            </span>
+          </div>
+        )}
+
+        <div className="subscription-divider" />
+
+        <div className="subscription-section-heading">
+          <div>
+            <h3>Choose a plan</h3>
+            <p>{canManageSubscription ? "Change the plan for this organization. This is a demo plan-management flow; no payment is processed." : "Only the workspace owner can change or cancel this subscription."}</p>
+          </div>
+        </div>
+
+        <div className="subscription-plans">
+          {(["FREE", "PRO", "BUSINESS"] as const).map(
+            (plan) => {
+              const isSelected =
+                selectedPlan === plan;
+              const isCurrent =
+                subscription?.plan === plan;
+
+              return (
+                <button
+                  key={plan}
+                  type="button"
+                  className={`subscription-plan ${isSelected ? "selected" : ""
+                    }`}
+                  onClick={() =>
+                    setSelectedPlan(plan)
+                  }
+                  disabled={!canManageSubscription}
+                  aria-pressed={isSelected}
+                >
+                  <div className="subscription-plan-top">
+                    <div>
+                      <span className="subscription-plan-name">
+                        {plan}
+                      </span>
+                      {isCurrent && (
+                        <span className="subscription-current-badge">
+                          Current
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="subscription-plan-check">
+                      {isSelected ? "✓" : ""}
+                    </span>
+                  </div>
+
+                  <span className="subscription-plan-period">
+                    {plan === "FREE"
+                      ? "12 month license"
+                      : "1 month license"}
+                  </span>
+                </button>
+              );
+            },
+          )}
+        </div>
+
+        <div className="subscription-action-row">
+          <button
+            type="button"
+            className="subscription-action"
+            onClick={handleSubscriptionChange}
+            disabled={
+              !canManageSubscription || subscriptionLoading ||
+              (subscription?.plan === selectedPlan &&
+                subscription.status === "ACTIVE")
+            }
+          >
+            {subscriptionLoading
+              ? "Updating..."
+              : subscription?.plan === selectedPlan &&
+                subscription.status === "ACTIVE"
+                ? "Current Plan"
+              : !canManageSubscription
+                ? "Owner access required"
+                : subscription
+                  ? `${selectedPlan === "FREE" ? "Downgrade" : "Change plan"} to ${selectedPlan}`
+                  : `Activate ${selectedPlan}`}
+          </button>
+        </div>
+
+        {subscription && canManageSubscription && (
+          <div className="subscription-license-card">
+            <div className="subscription-license-heading">
+              <div>
+                <span className="subscription-label">
+                  LICENSE INFORMATION
+                </span>
+                <h3>Organization license</h3>
+              </div>
+              <span className="subscription-license-badge">
+                Licensed
+              </span>
+            </div>
+
+            <div className="subscription-license-key">
+              <span>License Key</span>
+              <code>{subscription.licenseKey}</code>
+            </div>
+
+            <div className="subscription-license-meta">
+              <div>
+                <span>Plan</span>
+                <strong>{subscription.plan}</strong>
+              </div>
+
+              <div>
+                <span>Status</span>
+                <strong>{subscription.status}</strong>
+              </div>
+
+              <div>
+                <span>Start date</span>
+                <strong>
+                  {new Date(
+                    subscription.startsAt,
+                  ).toLocaleDateString()}
+                </strong>
+              </div>
+
+              <div>
+                <span>Expiry date</span>
+                <strong>
+                  {new Date(
+                    subscription.expiresAt,
+                  ).toLocaleDateString()}
+                </strong>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="chart-card">
         <div className="chart-header">
           <div>
@@ -1295,6 +1630,16 @@ function App() {
           </div>
         </div>
 
+        {!canUseTimeline && subscription && (
+          <p className="feature-lock">
+            Timeline reports are not included in your current plan. Upgrade to PRO to unlock this report.
+          </p>
+        )}
+
+        {timelineError && (
+          <p className="error">{timelineError}</p>
+        )}
+
         <div className="timeline-controls">
           <label htmlFor="timeline-from">
             From
@@ -1304,6 +1649,7 @@ function App() {
             id="timeline-from"
             type="date"
             value={timelineFrom}
+            disabled={!canUseTimeline}
             onChange={(event) =>
               setTimelineFrom(event.target.value)
             }
@@ -1317,6 +1663,7 @@ function App() {
             id="timeline-to"
             type="date"
             value={timelineTo}
+            disabled={!canUseTimeline}
             onChange={(event) =>
               setTimelineTo(event.target.value)
             }
@@ -1329,6 +1676,7 @@ function App() {
           <select
             id="timeline-group"
             value={timelineGroupBy}
+            disabled={!canUseTimeline}
             onChange={(event) =>
               setTimelineGroupBy(
                 event.target.value as
@@ -1346,7 +1694,7 @@ function App() {
           <button
             type="button"
             onClick={loadTimelineReport}
-            disabled={timelineLoading}
+            disabled={timelineLoading || !canUseTimeline}
           >
             {timelineLoading
               ? "Generating..."
@@ -1354,7 +1702,7 @@ function App() {
           </button>
         </div>
 
-        {timelineReport && (
+        {timelineReport && canUseTimeline && (
           <>
             <div className="summary-stats">
               <div>
@@ -1525,15 +1873,17 @@ function App() {
                   handleExportCsv
                 }
                 disabled={
-                  expenses.length === 0
+                  expenses.length === 0 || !canExportCsv
                 }
                 title={
                   expenses.length === 0
                     ? "No expenses to export"
-                    : "Export the currently filtered expenses as CSV"
+                    : !canExportCsv
+                      ? "Upgrade to PRO to export expenses as CSV"
+                      : "Export the currently filtered expenses as CSV"
                 }
               >
-                Export CSV
+                {canExportCsv ? "Export CSV" : "CSV export requires PRO"}
               </button>
             </div>
 

@@ -6,6 +6,7 @@ import {
     getBudgets,
     updateBudget,
 } from "../services/budget.service.js";
+import { AppError } from "../utils/AppError.js";
 
 export async function createBudgetController(
     req: Request,
@@ -26,6 +27,7 @@ export async function createBudgetController(
 
         return res.status(201).json(budget);
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error("Failed to create budget:", error);
 
         return res.status(500).json({
@@ -52,6 +54,7 @@ export async function getBudgetsController(
 
         return res.status(200).json(budgets);
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error("Failed to fetch budgets:", error);
 
         return res.status(500).json({
@@ -100,6 +103,7 @@ export async function updateBudgetController(
 
         return res.status(200).json(budget);
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error("Failed to update budget:", error);
 
         return res.status(500).json({
@@ -141,6 +145,7 @@ export async function deleteBudgetController(
 
         return res.status(204).send();
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error("Failed to delete budget:", error);
 
         return res.status(500).json({

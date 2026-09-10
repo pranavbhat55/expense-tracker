@@ -4,24 +4,27 @@ import {
     createSubscription,
     changeSubscription,
 } from "../services/subscription.service.js";
+import { getTenantEntitlements } from "../services/entitlement.service.js";
+import { AppError } from "../utils/AppError.js";
+
+function requireOwner(req: Request) {
+    if (req.role !== "OWNER") throw new AppError("Only the workspace owner can manage the subscription", 403, "FORBIDDEN");
+}
+
+function validPlan(plan: unknown): plan is "FREE" | "PRO" | "BUSINESS" {
+    return plan === "FREE" || plan === "PRO" || plan === "BUSINESS";
+}
 
 export async function getSubscriptionController(
     req: Request,
     res: Response,
 ) {
     try {
-        const subscription = await getSubscription(
-            req.tenantId,
-        );
-
-        if (!subscription) {
-            return res.status(404).json({
-                message: "No subscription found",
-            });
-        }
-
-        return res.status(200).json(subscription);
+        const { subscription, entitlements } = await getTenantEntitlements(req.tenantId);
+        if (req.baseUrl === "/subscription" && req.path === "/") return res.status(200).json(subscription);
+        return res.status(200).json({ subscription, role: req.role, plan: subscription.plan, status: subscription.status, licenseKey: req.role === "OWNER" ? subscription.licenseKey : undefined, entitlements });
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(
             "Failed to fetch subscription:",
             error,
@@ -38,13 +41,10 @@ export async function createSubscriptionController(
     res: Response,
 ) {
     try {
+        requireOwner(req);
         const { plan } = req.body;
 
-        if (
-            plan !== "FREE" &&
-            plan !== "PRO" &&
-            plan !== "BUSINESS"
-        ) {
+        if (!validPlan(plan)) {
             return res.status(400).json({
                 message:
                     "Plan must be FREE, PRO, or BUSINESS",
@@ -58,6 +58,7 @@ export async function createSubscriptionController(
 
         return res.status(201).json(subscription);
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(
             "Failed to create subscription:",
             error,
@@ -84,13 +85,10 @@ export async function changeSubscriptionController(
     res: Response,
 ) {
     try {
+        requireOwner(req);
         const { plan } = req.body;
 
-        if (
-            plan !== "FREE" &&
-            plan !== "PRO" &&
-            plan !== "BUSINESS"
-        ) {
+        if (!validPlan(plan)) {
             return res.status(400).json({
                 message:
                     "Plan must be FREE, PRO, or BUSINESS",
@@ -104,6 +102,7 @@ export async function changeSubscriptionController(
 
         return res.status(200).json(subscription);
     } catch (error) {
+        if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(
             "Failed to change subscription:",
             error,

@@ -98,6 +98,7 @@ export async function changeSubscription(
         data: {
             plan,
             status: "ACTIVE",
+            licenseKey: generateLicenseKey(),
             startsAt: new Date(),
             expiresAt: getExpiryDate(
                 plan === "FREE" ? 12 : 1,

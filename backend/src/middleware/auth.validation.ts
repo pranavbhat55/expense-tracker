@@ -14,6 +14,14 @@ export const registerSchema = z.object({
     password: z
         .string()
         .min(6, "Password must be at least 6 characters"),
+
+    workspaceSlug: z
+        .string()
+        .trim()
+        .min(2)
+        .max(64)
+        .regex(/^[a-z0-9-]+$/, "Workspace slug may contain lowercase letters, numbers, and hyphens")
+        .optional(),
 });
 export const loginSchema = z.object({
     email: z

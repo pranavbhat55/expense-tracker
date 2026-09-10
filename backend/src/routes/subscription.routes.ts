@@ -15,5 +15,7 @@ router.get("/", getSubscriptionController);
 router.post("/", createSubscriptionController);
 
 router.put("/", changeSubscriptionController);
+router.post("/change-plan", changeSubscriptionController);
+router.get("/me", getSubscriptionController);
 
 export default router;

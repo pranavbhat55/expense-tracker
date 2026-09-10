@@ -1,4 +1,5 @@
 import { prisma } from "./prisma.js";
+import { requireFeature } from "./entitlement.service.js";
 
 export async function createBudget(
     userId: number,
@@ -9,6 +10,7 @@ export async function createBudget(
         month: string;
     },
 ) {
+    await requireFeature(tenantId, "budgets");
     return prisma.budget.create({
         data: {
             amount: data.amount,
@@ -25,6 +27,7 @@ export async function getBudgets(
     tenantId: number,
     month?: string,
 ) {
+    await requireFeature(tenantId, "budgets");
     return prisma.budget.findMany({
         where: {
             userId,
@@ -42,6 +45,7 @@ export async function getBudgetById(
     userId: number,
     tenantId: number,
 ) {
+    await requireFeature(tenantId, "budgets");
     return prisma.budget.findFirst({
         where: {
             id,
@@ -61,6 +65,7 @@ export async function updateBudget(
         month: string;
     },
 ) {
+    await requireFeature(tenantId, "budgets");
     const existingBudget = await getBudgetById(
         id,
         userId,

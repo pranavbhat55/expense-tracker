@@ -7,6 +7,7 @@ import {
     updateExpense,
     deleteExpense,
 } from "../services/expense.service.js";
+import { enforceExpenseQuota, requireFeature } from "../services/entitlement.service.js";
 
 export async function createExpenseController(
     req: Request,
@@ -14,6 +15,7 @@ export async function createExpenseController(
     next: NextFunction,
 ) {
     try {
+        await enforceExpenseQuota(req.tenantId);
         const expense = await createExpense(
             req.userId,
             req.tenantId,
@@ -180,4 +182,14 @@ export async function deleteExpenseController(
     } catch (error) {
         next(error);
     }
+}
+
+export async function exportExpensesController(req: Request, res: Response, next: NextFunction) {
+    try {
+        await requireFeature(req.tenantId, "csvExport");
+        const expenses = await getExpenses(req.userId, req.tenantId, { page: 1, limit: 100, ...(typeof req.query.month === "string" ? { month: req.query.month } : {}), ...(typeof req.query.category === "string" ? { category: req.query.category } : {}) });
+        const escape = (value: string) => /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+        const csv = ["Date,Category,Note,Amount", ...expenses.data.map((expense) => [expense.date.toISOString().slice(0, 10), expense.category, expense.note ?? "", String(expense.amount)].map(escape).join(","))].join("\r\n");
+        res.type("text/csv").attachment("expenses.csv").send(csv);
+    } catch (error) { next(error); }
 }

@@ -5,6 +5,7 @@ import {
     getExpenseByIdController,
     getExpensesController,
     getExpenseSummaryController,
+    exportExpensesController,
     updateExpenseController,
 } from "../controllers/expense.controller.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -33,6 +34,7 @@ router.get(
     "/summary",
     getExpenseSummaryController,
 );
+router.get("/export", exportExpensesController);
 
 router.get("/:id", getExpenseByIdController);
 

@@ -7,6 +7,7 @@ interface JwtPayload {
     userId: number;
     email: string;
     tenantId: number;
+    role: "OWNER" | "ADMIN" | "MEMBER";
 }
 
 export function authenticate(
@@ -35,7 +36,9 @@ export function authenticate(
             !("userId" in decoded) ||
             typeof decoded.userId !== "number" ||
             !("tenantId" in decoded) ||
-            typeof decoded.tenantId !== "number"
+            typeof decoded.tenantId !== "number" ||
+            !("role" in decoded) ||
+            (decoded.role !== "OWNER" && decoded.role !== "ADMIN" && decoded.role !== "MEMBER")
         ) {
             throw new AppError("Invalid token", 401);
         }
@@ -44,6 +47,7 @@ export function authenticate(
 
         req.userId = payload.userId;
         req.tenantId = payload.tenantId;
+        req.role = payload.role;
 
         next();
     } catch (error) {
