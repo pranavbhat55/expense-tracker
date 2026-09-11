@@ -1,17 +1,16 @@
 # Expense Tracker
 
-A full-stack Expense Tracker application for managing personal expenses through a modern React dashboard and REST API backend.
+A full-stack, multi-tenant Expense Tracker application built with React, TypeScript, Express, Prisma, and PostgreSQL.
 
-Users can register, log in, create, update, delete, filter, analyze, and export their expenses. The dashboard also provides spending charts and monthly category budgets.
+The application allows users to manage expenses, budgets, spending reports, and CSV exports through a modern dashboard. It also supports tenant/workspace isolation, role-based authorization, subscription plans, licensing, and plan-based feature entitlements.
 
 ## Features
 
-### Core Features
+### Core Expense Features
 
-- User registration
-- User login
+- User registration and login
 - JWT authentication
-- Protected expense routes
+- Protected API routes
 - Create expenses
 - View expenses
 - Update expenses
@@ -26,26 +25,134 @@ Users can register, log in, create, update, delete, filter, analyze, and export 
 - Category-wise expense totals
 - Input validation
 - Future-date validation
+- Pagination
+- Infinite scrolling
 - Error handling
 - Loading states
 - Empty states
 
-### Additional Features
+### Multi-Tenant Workspaces
 
-- Spending-by-category chart
-- Monthly budgets per category
-- Edit monthly budgets
-- Delete monthly budgets
-- Budget progress tracking
-- Remaining budget calculation
-- Over-budget highlighting
-- CSV export of filtered expenses
-- Pagination
-- Infinite scrolling
-- Responsive dashboard UI
-- Pastel/beige themed interface
-- Frontend UI interaction tests
-- Backend API tests
+The application supports multiple isolated workspaces/tenants.
+
+Features include:
+
+- Create a new workspace
+- Join an existing workspace using a workspace slug
+- Tenant-specific expense data
+- Tenant-specific budgets
+- Tenant-specific subscriptions
+- Tenant isolation enforced on the backend
+- Workspace slug validation
+- Tenant-aware JWT authentication
+
+When a new workspace is created, the first user becomes the workspace `OWNER`.
+
+Users joining an existing workspace are assigned the `MEMBER` role.
+
+### Roles
+
+The application supports three roles:
+
+- `OWNER`
+- `ADMIN`
+- `MEMBER`
+
+Role-based authorization is enforced by the backend.
+
+The `OWNER` has permission to manage the workspace subscription and licensing.
+
+### Subscription and Licensing
+
+The application supports three subscription plans:
+
+- FREE
+- PRO
+- BUSINESS
+
+Subscription functionality includes:
+
+- Subscription creation
+- Plan changes
+- Subscription status
+- Subscription expiry
+- License key generation
+- License information
+- Plan usage information
+- Feature entitlements
+- Seat limits
+- Monthly expense limits
+- Owner-only subscription management
+
+The backend centrally evaluates subscription entitlements instead of relying only on frontend UI restrictions.
+
+### Plan Entitlements
+
+Subscription plans control access to application features and usage limits.
+
+Entitlements include:
+
+- Monthly expense limits
+- Workspace seat limits
+- Timeline reporting
+- CSV export
+- Monthly budgets
+- Other plan-specific feature access
+
+Feature restrictions are enforced server-side.
+
+If a user attempts to access a restricted feature directly through the API, the backend returns a structured entitlement error.
+
+### Timeline Reporting
+
+The dashboard includes a Spending Timeline report.
+
+Timeline reports support:
+
+- Day grouping
+- Week grouping
+- Month grouping
+- Date-range filtering
+- Tenant-specific expense aggregation
+- Subscription entitlement enforcement
+
+The timeline is displayed using a frontend chart and refreshes when expense or subscription data changes.
+
+### Monthly Budgets
+
+Users can create and manage monthly budgets for expense categories.
+
+Budget functionality includes:
+
+- Create a monthly budget
+- Edit a monthly budget
+- Delete a monthly budget
+- Track category spending
+- Display budget amount
+- Display amount spent
+- Display remaining budget
+- Display budget progress
+- Highlight over-budget categories
+
+Budget access is controlled by subscription entitlements.
+
+### CSV Export
+
+Expenses can be exported as CSV.
+
+The export supports the currently selected expense filters, including:
+
+- Month
+- Category
+
+The CSV contains:
+
+- Date
+- Category
+- Note
+- Amount
+
+CSV export is protected by server-side subscription entitlement checks.
 
 ## Tech Stack
 
@@ -70,10 +177,35 @@ Users can register, log in, create, update, delete, filter, analyze, and export 
 - Vitest
 - Supertest
 
-## Project Structure
+## Architecture
 
 ```text
+React + TypeScript Frontend
+            |
+            v
+       REST API
+            |
+            v
+Express + TypeScript Backend
+            |
+     +------+------+
+     |             |
+     v             v
+JWT Authentication  Role Authorization
+     |             |
+     +------+------+
+            |
+            v
+    Entitlement Service
+            |
+            v
+          Prisma
+            |
+            v
+       PostgreSQL
+
 expense-tracker/
+
 ├── backend/
 │   ├── prisma/
 │   │   ├── migrations/
@@ -83,8 +215,10 @@ expense-tracker/
 │   │   ├── middleware/
 │   │   ├── routes/
 │   │   ├── services/
+│   │   ├── tests/
 │   │   └── server.ts
 │   └── package.json
+│
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
@@ -93,6 +227,7 @@ expense-tracker/
 │   │   ├── App.css
 │   │   └── main.tsx
 │   └── package.json
+│
 ├── .gitignore
 └── README.md
 Prerequisites
@@ -114,11 +249,7 @@ The backend uses PostgreSQL with Prisma.
 Create a database named:
 
 expense_tracker
-
-For example:
-
 CREATE DATABASE expense_tracker;
-
 You may use a different database name if you update the database connection string.
 
 2. Configure environment variables
@@ -139,15 +270,30 @@ PASSWORD with your PostgreSQL password
 expense_tracker with your database name if different
 your_secret_key with a secure JWT secret
 
-Do not commit the .env file to Git.
+Do not commit .env files or real credentials to Git.
 
 3. Install backend dependencies
 cd backend
 npm install
-4. Generate Prisma client
+4. Generate Prisma Client
 npx prisma generate
 5. Apply database migrations
+
+For development:
+
 npx prisma migrate dev
+
+For deploying existing migrations:
+
+npx prisma migrate deploy
+Database Migration
+
+The multi-tenant role and authorization functionality includes the migration:
+
+20260910100000_add_workspace_roles
+
+The migration adds the database changes required for workspace roles and related functionality.
+
 Backend Setup
 
 From the project root:
@@ -161,9 +307,9 @@ The backend runs at:
 http://localhost:3000
 Health Check
 
-You can verify that the backend is running at:
+Verify that the backend is running:
 
-http://localhost:3000/health
+GET /health
 
 Expected response:
 
@@ -172,7 +318,7 @@ Expected response:
 }
 Frontend Setup
 
-Open another terminal and run:
+Open another terminal:
 
 cd frontend
 npm install
@@ -186,31 +332,98 @@ Open the displayed Vite URL in your browser.
 
 How to Use
 Start PostgreSQL.
-Start the backend:
-cd backend
-npm run dev
-Open another terminal.
-Start the frontend:
-cd frontend
-npm run dev
-Open the frontend in your browser.
+Start the backend.
+Start the frontend.
 Register a new account.
-Log in with your account.
-Add an expense.
-View your expenses in the dashboard.
-Edit an existing expense.
-Delete an expense.
-Filter expenses by month.
-Filter expenses by category.
-Clear the filters when needed.
-Review the monthly expense summary.
-View the spending-by-category chart.
-Create a monthly budget for a category.
-Edit or delete an existing budget.
-Monitor budget progress.
-Review over-budget warnings.
-Export filtered expenses as a CSV file.
-Continue scrolling to load additional expenses.
+Create a new workspace by leaving the workspace slug empty.
+The first user becomes the workspace OWNER.
+Add expenses.
+Review the dashboard summary.
+Create monthly budgets.
+View the spending chart.
+Open Spending Timeline.
+Switch between Day, Week, and Month views.
+Open Plan & Billing.
+Review subscription plan and entitlement information.
+Change subscription plan as the workspace owner.
+Export expenses as CSV when the current plan allows it.
+Joining an Existing Workspace
+
+To join an existing workspace:
+
+Register a new user.
+Enter the existing workspace slug.
+The user joins the workspace as a MEMBER.
+
+For example:
+
+Workspace slug: technova
+
+If technova already exists, a new user can join that workspace.
+
+Roles
+
+Example workspace:
+
+technova
+├── Rahul Sharma
+│   └── OWNER
+│
+└── Amit Kumar
+    └── MEMBER
+
+The workspace owner can manage the subscription.
+
+Members can access functionality according to their role and the workspace subscription entitlements.
+
+Subscription Plans
+
+The application provides three plans:
+
+FREE
+PRO
+BUSINESS
+
+Each plan has different usage limits and feature entitlements.
+
+The backend determines whether a requested operation is permitted based on the tenant's current subscription.
+
+Subscription API
+
+The current subscription and entitlement information can be retrieved through:
+
+GET /subscriptions/me
+
+The response includes information such as:
+
+User role
+Current subscription
+Plan
+Subscription status
+License information
+Entitlements
+Usage information
+
+Subscription management is restricted to the workspace owner.
+
+Timeline Reporting
+
+Timeline reports can be accessed through the expense reporting API.
+
+The report supports:
+
+Day
+Week
+Month
+
+The report is generated using tenant-specific expense data.
+
+The backend validates:
+
+Tenant access
+Date range
+Grouping value
+Subscription entitlement
 Expense Features
 
 Each expense can contain:
@@ -224,17 +437,17 @@ The application supports:
 
 Creating expenses
 Viewing expenses
-Viewing individual expenses through the API
 Updating expenses
 Deleting expenses
+Filtering expenses
+Pagination
+Infinite scrolling
 
 Expenses are displayed with the most recent expenses first.
 
 Expense Validation
 
-The application validates expense data on the backend.
-
-Validation includes:
+Backend validation includes:
 
 Amount must be greater than zero
 Category is required
@@ -244,7 +457,7 @@ Month filters must use YYYY-MM format
 Category filters cannot be empty
 Pagination values are validated
 
-The frontend also provides immediate feedback for invalid input where applicable.
+The frontend also provides immediate feedback where applicable.
 
 Filtering
 
@@ -261,11 +474,11 @@ Example:
 
 Food
 
-Filters can be combined and cleared to return to the full expense list.
+Filters can be combined where supported.
 
 Expense Summary
 
-The dashboard provides a monthly expense summary containing:
+The dashboard provides:
 
 Total expenses
 Number of expenses
@@ -273,70 +486,83 @@ Average expense amount
 Highest expense amount
 Category-wise spending totals
 
-When a month is selected, the summary reflects the selected month.
+Example:
 
+GET /expenses/summary?month=2026-08
 Spending Chart
 
 The dashboard includes a spending-by-category chart.
 
-The chart provides a visual breakdown of spending across expense categories for the selected month.
-
-Changing the selected month updates the displayed spending information.
+The chart provides a visual breakdown of spending across categories for the selected month.
 
 Monthly Budgets
 
-Users can set monthly spending limits for individual categories.
+Example:
 
-Budget functionality includes:
+GET /budgets?month=2026-08
 
-Create a monthly budget
-Edit a monthly budget
-Delete a monthly budget
-Track category spending against the budget
-Display the amount spent
-Display the budget amount
-Display the remaining budget
-Display budget progress
-Highlight categories when spending exceeds the budget
-
-When spending exceeds a category's monthly budget, the dashboard displays an over-budget warning.
+Budget endpoints require authentication and are subject to subscription entitlements.
 
 CSV Export
 
-Expenses can be exported as a CSV file.
+Expenses can be exported through:
 
-The export uses the currently selected expense filters.
+GET /expenses/export
 
-Supported filters include:
+The export supports expense filters such as:
 
-Month
-Category
+GET /expenses/export?month=2026-08
+GET /expenses/export?category=Food
 
-The CSV contains:
+CSV export is subject to the current subscription entitlement.
 
-Date
-Category
-Note
-Amount
 Pagination and Infinite Scrolling
 
-Expenses are loaded in pages rather than loading the entire expense history at once.
+Expenses are loaded in pages instead of loading the entire expense history at once.
 
 As the user reaches the bottom of the expense list, additional expenses are automatically loaded.
 
-This helps keep the application responsive when there are many expenses.
+Authentication and Authorization
 
-Authentication
+The application uses JWT-based authentication.
 
-The application includes:
+Authentication provides:
 
-User registration
-User login
-JWT-based authentication
-Protected expense routes
-Protected budget routes
+User identity
+Tenant identity
+User role
 
-Users must be authenticated before accessing protected expense and budget functionality.
+The backend uses the authenticated tenant ID when accessing tenant-owned resources.
+
+Authorization middleware enforces role-specific operations.
+
+Subscription management is restricted to the workspace OWNER.
+
+Tenant Isolation
+
+Tenant isolation is enforced on the backend.
+
+Tenant-owned resources include:
+
+Expenses
+Budgets
+Subscriptions
+Reports
+
+A request cannot access another tenant's data simply by changing a resource ID.
+
+The authenticated tenant ID is used when querying and modifying tenant-owned data.
+
+Entitlement Errors
+
+The backend returns structured errors for restricted operations.
+
+Examples include:
+
+FEATURE_NOT_ENTITLED
+EXPENSE_QUOTA_EXCEEDED
+
+This allows the frontend to display appropriate locked or upgrade states while keeping enforcement on the server.
 
 API Endpoints
 Health
@@ -350,29 +576,35 @@ POST /expenses
 GET /expenses/:id
 PUT /expenses/:id
 DELETE /expenses/:id
+GET /expenses/export
 Expense Filters
 GET /expenses?month=2026-08
 GET /expenses?category=Food
-
-Filters can also be combined where supported.
-
 Expense Summary
 GET /expenses/summary
-
-Example:
-
 GET /expenses/summary?month=2026-08
+Timeline Reporting
+GET /expenses/timeline
+
+Timeline access is subject to subscription entitlements.
+
 Budgets
 GET /budgets
 POST /budgets
 PUT /budgets/:id
 DELETE /budgets/:id
+Subscriptions
 
-Example:
+Current subscription:
 
-GET /budgets?month=2026-08
+GET /subscriptions/me
 
-Budget endpoints require authentication.
+Subscription operations include:
+
+POST /subscriptions
+POST /subscriptions/change-plan
+
+Legacy subscription routes are retained for compatibility.
 
 Running Tests
 Frontend Tests
@@ -383,14 +615,22 @@ npm test
 
 The frontend test suite covers UI interactions and application behavior.
 
+Current verification:
+
+2 test files passed
+12 tests passed
 Backend Tests
 
 From the backend directory:
 
 npm test
 
-Backend tests cover API behavior and validation/authentication scenarios included in the test suite.
+The backend test suite covers API behavior, authentication, validation, and entitlement scenarios included in the test suite.
 
+Current verification:
+
+4 test files passed
+10 tests passed
 Production Builds
 Backend
 cd backend
@@ -399,7 +639,7 @@ Frontend
 cd frontend
 npm run build
 
-A successful frontend build may display a Vite bundle-size warning for large JavaScript chunks. This is a warning and does not indicate a failed build.
+A successful frontend build may display a Vite bundle-size warning for large JavaScript chunks. This is a performance warning and does not indicate a failed build.
 
 Development
 
@@ -417,7 +657,7 @@ From the backend directory:
 
 npx prisma studio
 
-This can be used to inspect the development database.
+Prisma Studio can be used to inspect the development database.
 
 Environment Variables
 
@@ -441,6 +681,11 @@ Future expense dates
 Failed API requests
 Failed expense operations
 Failed budget operations
+Expired subscriptions
+Restricted subscription features
+Expense quota exceeded
+Workspace not found
+Unauthorized role operations
 Empty expense results
 Loading states
 Responsive Design
@@ -451,19 +696,35 @@ Desktop
 Tablet
 Mobile
 
-The dashboard, forms, summary cards, budgets, chart, filters, and expense list adapt to smaller screen sizes.
+The dashboard, forms, summary cards, budgets, charts, filters, and expense list adapt to smaller screen sizes.
 
+Verification
+
+The current implementation has been verified with:
+
+Backend
+Prisma Client generation
+Prisma migration deployment
+TypeScript build
+10 backend tests passing
+Frontend
+Production build
+12 frontend tests passing
+ESLint passing
+
+Database migration deployment reported:
+
+No pending migrations to apply.
 Git Workflow
 
 Development work is performed on feature branches.
 
-The final Expense Tracker implementation is available on:
+The completed implementation is available on:
 
-feature/expense-tracker
+feature/multi-tenant
 
-The project is submitted through a pull request targeting:
+The branch has been pushed to the remote repository and is ready for pull request review.
 
-main
 Author
 
 Pranav
