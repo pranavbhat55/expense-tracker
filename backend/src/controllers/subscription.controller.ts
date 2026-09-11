@@ -51,12 +51,20 @@ export async function createSubscriptionController(
             });
         }
 
-        const subscription = await createSubscription(
+        await createSubscription(
             req.tenantId,
             plan,
         );
 
-        return res.status(201).json(subscription);
+        const { subscription, entitlements } = await getTenantEntitlements(req.tenantId);
+        return res.status(201).json({
+            subscription,
+            role: req.role,
+            plan: subscription.plan,
+            status: subscription.status,
+            licenseKey: subscription.licenseKey,
+            entitlements,
+        });
     } catch (error) {
         if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(
@@ -95,12 +103,20 @@ export async function changeSubscriptionController(
             });
         }
 
-        const subscription = await changeSubscription(
+        await changeSubscription(
             req.tenantId,
             plan,
         );
 
-        return res.status(200).json(subscription);
+        const { subscription, entitlements } = await getTenantEntitlements(req.tenantId);
+        return res.status(200).json({
+            subscription,
+            role: req.role,
+            plan: subscription.plan,
+            status: subscription.status,
+            licenseKey: subscription.licenseKey,
+            entitlements,
+        });
     } catch (error) {
         if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(

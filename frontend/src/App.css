@@ -236,6 +236,14 @@ button {
   color: #929a95;
 }
 
+.workspace-hint {
+  display: block;
+  margin: -4px 0 12px;
+  color: #77716b;
+  font-size: .74rem;
+  line-height: 1.4;
+}
+
 .expense-form input:hover,
 .filters input:hover,
 .budget-form input:hover,
@@ -2345,14 +2353,25 @@ input[type="month"]:focus {
 .timeline-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: 12px;
-  margin-bottom: 24px;
+  align-items: flex-end;
+  gap: 14px;
+  margin: 22px 0 26px;
+  padding: 16px;
+  border: 1px solid #e6ddd1;
+  border-radius: 14px;
+  background: #f8f4ed;
+}
+
+.timeline-field {
+  display: grid;
+  min-width: 145px;
+  gap: 6px;
 }
 
 .timeline-controls label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 750;
+  color: #625f57;
 }
 
 .timeline-controls input,
@@ -2369,6 +2388,10 @@ input[type="month"]:focus {
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
+  background: linear-gradient(135deg, #547b69, #375c4c);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(55, 92, 76, .16);
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -2407,6 +2430,76 @@ input[type="month"]:focus {
 .timeline-controls select option {
   background-color: #ffffff !important;
   color: #222222 !important;
+}
+
+/* Data visualisation refinements */
+.chart-card .summary-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 520px;
+  margin-bottom: 4px;
+}
+
+.chart-card .summary-stats > div {
+  min-height: 106px;
+  padding: 16px 18px;
+}
+
+.chart-container {
+  position: relative;
+  min-height: 320px;
+  padding: 14px 8px 2px 0;
+  border: 1px solid #eee6db;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffefa, #fcf8f1);
+}
+
+.chart-container::after {
+  content: "Hover a bar for details";
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #948c80;
+  font-size: .72rem;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: #7c756b;
+}
+
+.recharts-tooltip-label {
+  margin-bottom: 5px !important;
+  color: #5f5a52;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.recharts-tooltip-item {
+  color: #2e6552 !important;
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+@media (max-width: 700px) {
+  .timeline-field {
+    width: 100%;
+  }
+
+  .chart-card .summary-stats {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+
+  .chart-container {
+    min-height: 270px;
+    padding-top: 24px;
+  }
+
+  .chart-container::after {
+    top: 7px;
+    right: 12px;
+  }
 }
 
 /* Subscription & Licensing */

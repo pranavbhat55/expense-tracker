@@ -17,17 +17,24 @@ export async function registerUser(data: { name: string; email: string; password
     const password = await bcrypt.hash(data.password, 10);
     if (data.workspaceSlug) {
         const tenant = await prisma.tenant.findUnique({ where: { slug: data.workspaceSlug } });
-        if (!tenant) throw new AppError("Workspace not found", 404, "WORKSPACE_NOT_FOUND");
-        await enforceSeatLimit(tenant.id);
+        if (tenant) {
+            await enforceSeatLimit(tenant.id);
+        }
     }
     const result = await prisma.$transaction(async (tx) => {
         if (data.workspaceSlug) {
             const tenant = await tx.tenant.findUnique({ where: { slug: data.workspaceSlug } });
-            if (!tenant) throw new AppError("Workspace not found", 404, "WORKSPACE_NOT_FOUND");
-            // The pre-check is outside this transaction because the entitlement service uses the shared client.
-            return { tenant, user: await tx.user.create({ data: { name: data.name, email: data.email, password, tenantId: tenant.id, role: "MEMBER" } }) };
+            if (tenant) {
+                // The seat-limit pre-check is outside this transaction because the entitlement service uses the shared client.
+                return { tenant, user: await tx.user.create({ data: { name: data.name, email: data.email, password, tenantId: tenant.id, role: "MEMBER" } }) };
+            }
         }
-        const tenant = await tx.tenant.create({ data: { name: `${data.name}'s Organization`, slug: makeSlug(data.name) } });
+        const tenant = await tx.tenant.create({
+            data: {
+                name: `${data.name}'s Organization`,
+                slug: data.workspaceSlug || makeSlug(data.name),
+            },
+        });
         const user = await tx.user.create({ data: { name: data.name, email: data.email, password, tenantId: tenant.id, role: "OWNER" } });
         const startsAt = new Date();
         const expiresAt = new Date(startsAt);

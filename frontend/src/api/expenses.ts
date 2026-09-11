@@ -6,6 +6,22 @@ import type {
 
 const API_URL = "http://localhost:3000";
 
+async function getResponseError(
+    response: Response,
+    fallback: string,
+): Promise<string> {
+    try {
+        const body = await response.json() as {
+            message?: string;
+            errors?: Array<{ message?: string }>;
+        };
+
+        return body.message ?? body.errors?.[0]?.message ?? fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 export async function getExpenses(
     month?: string,
     category?: string,
@@ -69,7 +85,12 @@ export async function createExpense(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to create expense");
+        throw new Error(
+            await getResponseError(
+                response,
+                "Failed to create expense",
+            ),
+        );
     }
 
     return response.json();

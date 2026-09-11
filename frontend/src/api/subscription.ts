@@ -45,7 +45,15 @@ async function subscriptionRequest(url: string, options: RequestInit = {}): Prom
   if (!response.ok) {
     throw new ApiError(response.status, typeof data.message === "string" ? data.message : "Subscription request failed", data.code);
   }
-  return data.subscription ?? data;
+  if (data.subscription) {
+    return {
+      ...data.subscription,
+      role: data.role,
+      entitlements: data.entitlements,
+    };
+  }
+
+  return data;
 }
 
 /** Uses the entitlement endpoint when available, while retaining compatibility with the original API. */

@@ -58,6 +58,27 @@ const CSV_COLUMNS = [
   "Amount",
 ];
 
+const chartAxisStyle = {
+  fill: "#7c756b",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatCompactCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 function getTodayInputValue(): string {
   const today = new Date();
   const year = today.getFullYear();
@@ -307,6 +328,7 @@ function App() {
 
       setSubscription(response);
       setSelectedPlan(response.plan);
+      await loadSubscription();
       await loadTimelineReport();
     } catch (error) {
       console.error(
@@ -749,8 +771,11 @@ function App() {
                   onChange={(event) =>
                     setWorkspaceSlug(event.target.value)
                   }
-                  placeholder="Leave empty to create a workspace"
+                  placeholder="e.g. acme-finance"
                 />
+                <small className="workspace-hint">
+                  Choose a new slug to create a workspace, or enter an existing slug to join it.
+                </small>
               </>
             )}
 
@@ -1641,55 +1666,52 @@ function App() {
         )}
 
         <div className="timeline-controls">
-          <label htmlFor="timeline-from">
-            From
-          </label>
+          <div className="timeline-field">
+            <label htmlFor="timeline-from">From</label>
+            <input
+              id="timeline-from"
+              type="date"
+              value={timelineFrom}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineFrom(event.target.value)
+              }
+            />
+          </div>
 
-          <input
-            id="timeline-from"
-            type="date"
-            value={timelineFrom}
-            disabled={!canUseTimeline}
-            onChange={(event) =>
-              setTimelineFrom(event.target.value)
-            }
-          />
+          <div className="timeline-field">
+            <label htmlFor="timeline-to">To</label>
+            <input
+              id="timeline-to"
+              type="date"
+              value={timelineTo}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineTo(event.target.value)
+              }
+            />
+          </div>
 
-          <label htmlFor="timeline-to">
-            To
-          </label>
-
-          <input
-            id="timeline-to"
-            type="date"
-            value={timelineTo}
-            disabled={!canUseTimeline}
-            onChange={(event) =>
-              setTimelineTo(event.target.value)
-            }
-          />
-
-          <label htmlFor="timeline-group">
-            Group by
-          </label>
-
-          <select
-            id="timeline-group"
-            value={timelineGroupBy}
-            disabled={!canUseTimeline}
-            onChange={(event) =>
-              setTimelineGroupBy(
-                event.target.value as
-                | "day"
-                | "week"
-                | "month",
-              )
-            }
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
+          <div className="timeline-field">
+            <label htmlFor="timeline-group">View</label>
+            <select
+              id="timeline-group"
+              value={timelineGroupBy}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineGroupBy(
+                  event.target.value as
+                  | "day"
+                  | "week"
+                  | "month",
+                )
+              }
+            >
+              <option value="day">Daily</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+            </select>
+          </div>
 
           <button
             type="button"
@@ -1735,32 +1757,52 @@ function App() {
                       bottom: 10,
                     }}
                   >
+                    <defs>
+                      <linearGradient id="timelineBar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4d8b70" />
+                        <stop offset="100%" stopColor="#2d6251" />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid
-                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#e8e1d7"
+                      strokeDasharray="4 5"
                     />
 
                     <XAxis
                       dataKey="date"
-                      tick={{
-                        fontSize: 12,
-                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={chartAxisStyle}
+                      minTickGap={28}
                     />
 
                     <YAxis
-                      tick={{
-                        fontSize: 13,
-                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={chartAxisStyle}
+                      tickFormatter={formatCompactCurrency}
+                      width={56}
                     />
 
                     <Tooltip
-                      formatter={(value) =>
-                        `₹${Number(value).toFixed(2)}`
-                      }
+                      formatter={(value) => formatCurrency(Number(value))}
+                      labelFormatter={(label) => `Period: ${label}`}
+                      cursor={{ fill: "rgba(78, 125, 103, 0.08)" }}
+                      contentStyle={{
+                        border: "1px solid #ded5c9",
+                        borderRadius: 12,
+                        background: "rgba(255, 253, 249, 0.97)",
+                        boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
+                      }}
                     />
 
                     <Bar
                       dataKey="total"
                       name="Spending"
+                      fill="url(#timelineBar)"
+                      barSize={28}
+                      activeBar={{ fill: "#c18a58" }}
                       radius={[
                         6,
                         6,
@@ -1812,34 +1854,52 @@ function App() {
                   bottom: 10,
                 }}
               >
+                <defs>
+                  <linearGradient id="categoryBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#b48952" />
+                    <stop offset="100%" stopColor="#87653d" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
-                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#e8e1d7"
+                  strokeDasharray="4 5"
                 />
 
                 <XAxis
                   dataKey="category"
-                  tick={{
-                    fontSize: 13,
-                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={chartAxisStyle}
+                  interval={0}
                 />
 
                 <YAxis
-                  tick={{
-                    fontSize: 13,
-                  }}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={chartAxisStyle}
+                  tickFormatter={formatCompactCurrency}
+                  width={56}
                 />
 
                 <Tooltip
-                  formatter={(value) =>
-                    `₹${Number(
-                      value,
-                    ).toFixed(2)}`
-                  }
+                  formatter={(value) => formatCurrency(Number(value))}
+                  labelFormatter={(label) => `Category: ${label}`}
+                  cursor={{ fill: "rgba(180, 137, 82, 0.08)" }}
+                  contentStyle={{
+                    border: "1px solid #ded5c9",
+                    borderRadius: 12,
+                    background: "rgba(255, 253, 249, 0.97)",
+                    boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
+                  }}
                 />
 
                 <Bar
                   dataKey="total"
                   name="Spending"
+                  fill="url(#categoryBar)"
+                  barSize={36}
+                  activeBar={{ fill: "#547b69" }}
                   radius={[
                     6,
                     6,

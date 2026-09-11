@@ -65,7 +65,9 @@ export async function register(
 
     if (!response.ok) {
         throw new Error(
-            data.message || "Failed to register",
+            data.errors?.[0]?.message ||
+            data.message ||
+            "Failed to register",
         );
     }
 

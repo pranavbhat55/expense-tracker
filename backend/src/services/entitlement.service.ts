@@ -1,5 +1,6 @@
 import { prisma } from "./prisma.js";
 import { AppError } from "../utils/AppError.js";
+import crypto from "crypto";
 
 export type Feature = "timelineReports" | "csvExport" | "budgets";
 type Plan = "FREE" | "PRO" | "BUSINESS";
@@ -25,8 +26,25 @@ function monthRange(now = new Date()) {
 }
 
 export async function getTenantEntitlements(tenantId: number) {
-    const subscription = await prisma.subscription.findUnique({ where: { tenantId } });
-    if (!subscription) throw new AppError("No subscription found for this workspace", 403, "SUBSCRIPTION_REQUIRED");
+    const startsAt = new Date();
+    const expiresAt = new Date(startsAt);
+    expiresAt.setDate(expiresAt.getDate() + 14);
+
+    // Workspaces created before subscription licensing was introduced do not
+    // have a Subscription record. Provision the same Free trial received by
+    // newly registered workspaces so their existing expense data stays usable.
+    const subscription = await prisma.subscription.upsert({
+        where: { tenantId },
+        update: {},
+        create: {
+            tenantId,
+            plan: "FREE",
+            status: "TRIALING",
+            licenseKey: `EXP-${crypto.randomBytes(12).toString("hex").toUpperCase()}`,
+            startsAt,
+            expiresAt,
+        },
+    });
     if (subscription.expiresAt <= new Date() && subscription.status !== "EXPIRED") {
         await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "EXPIRED" } });
         subscription.status = "EXPIRED";
