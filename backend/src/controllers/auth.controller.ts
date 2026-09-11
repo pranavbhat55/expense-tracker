@@ -6,9 +6,15 @@ export async function registerController(
     next: NextFunction,
 ) {
     try {
-        const user = await registerUser(req.body);
+        await registerUser(req.body);
+        const session = await loginUser({
+            email: req.body.email,
+            password: req.body.password,
+        });
 
-        res.status(201).json(user);
+        // Registration signs the user in immediately so the frontend can use
+        // protected workspace features, including expense creation.
+        res.status(201).json(session);
     } catch (error) {
         next(error);
     }
