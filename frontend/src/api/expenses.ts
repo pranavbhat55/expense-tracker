@@ -6,15 +6,33 @@ import type {
 
 const API_URL = "http://localhost:3000";
 
+async function getResponseError(
+    response: Response,
+    fallback: string,
+): Promise<string> {
+    try {
+        const body = await response.json() as {
+            message?: string;
+            errors?: Array<{ message?: string }>;
+        };
+
+        return body.message ?? body.errors?.[0]?.message ?? fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 export async function getExpenses(
     month?: string,
     category?: string,
+    page: number = 1,
+    limit: number = 10,
 ): Promise<ExpensesResponse> {
     const token = localStorage.getItem("token");
 
     const params = new URLSearchParams({
-        page: "1",
-        limit: "100",
+        page: String(page),
+        limit: String(limit),
     });
 
     if (month) {
@@ -67,7 +85,12 @@ export async function createExpense(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to create expense");
+        throw new Error(
+            await getResponseError(
+                response,
+                "Failed to create expense",
+            ),
+        );
     }
 
     return response.json();
@@ -155,4 +178,123 @@ export async function getExpenseSummary(
     }
 
     return response.json();
+}
+export type Budget = {
+    id: number;
+    amount: string;
+    category: string;
+    month: string;
+    userId: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export async function getBudgets(
+    month?: string,
+): Promise<Budget[]> {
+    const token = localStorage.getItem("token");
+
+    const params = new URLSearchParams();
+
+    if (month) {
+        params.set("month", month);
+    }
+
+    const query = params.toString();
+
+    const response = await fetch(
+        `${API_URL}/budgets${query ? `?${query}` : ""}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch budgets");
+    }
+
+    return response.json();
+}
+
+export async function createBudget(
+    amount: number,
+    category: string,
+    month: string,
+): Promise<Budget> {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+        `${API_URL}/budgets`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                amount,
+                category,
+                month,
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to create budget");
+    }
+
+    return response.json();
+}
+
+export async function updateBudget(
+    id: number,
+    amount: number,
+    category: string,
+    month: string,
+): Promise<Budget> {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+        `${API_URL}/budgets/${id}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                amount,
+                category,
+                month,
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to update budget");
+    }
+
+    return response.json();
+}
+
+export async function deleteBudget(
+    id: number,
+): Promise<void> {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+        `${API_URL}/budgets/${id}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to delete budget");
+    }
 }

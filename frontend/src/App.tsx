@@ -1,22 +1,96 @@
-import { useEffect, useState } from "react";
+﻿import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+/* eslint-disable react-refresh/only-export-components, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { FormEvent } from "react";
+
 import {
   login,
   register,
 } from "./api/auth";
+
 import {
   createExpense,
   deleteExpense,
   getExpenses,
   getExpenseSummary,
   updateExpense,
+  getBudgets,
+  createBudget,
+  updateBudget,
+  deleteBudget,
+  type Budget,
 } from "./api/expenses";
-import type { Expense, ExpenseSummary } from "./types/expense";
+
+import type {
+  Expense,
+  ExpenseSummary,
+} from "./types/expense";
+
+import type { TimelineReport } from "./types/report";
+import { getTimelineReport } from "./api/reports";
+import {
+  createSubscription,
+  getSubscription,
+  changeSubscription,
+  type Subscription,
+} from "./api/subscription";
+
+
 import "./App.css";
 
-const CSV_COLUMNS = ["Date", "Category", "Note", "Amount"];
+const CSV_COLUMNS = [
+  "Date",
+  "Category",
+  "Note",
+  "Amount",
+];
 
-export function escapeCsvValue(value: string): string {
+const chartAxisStyle = {
+  fill: "#7c756b",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatCompactCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function getTodayInputValue(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function escapeCsvValue(
+  value: string,
+): string {
   if (/[",\r\n]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`;
   }
@@ -24,7 +98,9 @@ export function escapeCsvValue(value: string): string {
   return value;
 }
 
-export function formatExpenseDateForCsv(date: string): string {
+export function formatExpenseDateForCsv(
+  date: string,
+): string {
   const parsed = new Date(date);
 
   if (Number.isNaN(parsed.getTime())) {
@@ -34,8 +110,12 @@ export function formatExpenseDateForCsv(date: string): string {
   return parsed.toISOString().split("T")[0];
 }
 
-export function buildExpensesCsv(rows: Expense[]): string {
-  const lines = [CSV_COLUMNS.join(",")];
+export function buildExpensesCsv(
+  rows: Expense[],
+): string {
+  const lines = [
+    CSV_COLUMNS.join(","),
+  ];
 
   for (const expense of rows) {
     const values = [
@@ -45,100 +125,366 @@ export function buildExpensesCsv(rows: Expense[]): string {
       Number(expense.amount).toFixed(2),
     ];
 
-    lines.push(values.map(escapeCsvValue).join(","));
+    lines.push(
+      values.map(escapeCsvValue).join(","),
+    );
   }
 
   return lines.join("\r\n");
 }
 
 function App() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] =
+    useState(true);
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
+  const observerRef =
+    useRef<IntersectionObserver | null>(null);
+
+  const [expenses, setExpenses] =
+    useState<Expense[]>([]);
+
   const [summary, setSummary] =
     useState<ExpenseSummary | null>(null);
+
+  const [timelineReport, setTimelineReport] =
+    useState<TimelineReport | null>(null);
+
+  const [timelineFrom, setTimelineFrom] =
+    useState("2026-08-01");
+
+  const [timelineTo, setTimelineTo] =
+    useState("2026-09-01");
+
+  const [timelineGroupBy, setTimelineGroupBy] =
+    useState<"day" | "week" | "month">("day");
+
+  const [timelineLoading, setTimelineLoading] =
+    useState(false);
+
+  const [subscription, setSubscription] =
+    useState<Subscription | null>(null);
+
+  const [subscriptionLoading, setSubscriptionLoading] =
+    useState(false);
+
+  const [subscriptionError, setSubscriptionError] =
+    useState("");
+
+  const [timelineError, setTimelineError] =
+    useState("");
+
+  const [selectedPlan, setSelectedPlan] =
+    useState<"FREE" | "PRO" | "BUSINESS">("PRO");
+
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] =
+    useState("");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
-  const [filterMonth, setFilterMonth] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
+
+  const [filterMonth, setFilterMonth] =
+    useState("");
+  const [filterCategory, setFilterCategory] =
+    useState("");
+
   const [editingExpenseId, setEditingExpenseId] =
     useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [checkingAuth, setCheckingAuth] =
+    useState(true);
+
   const [error, setError] = useState("");
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] =
+    useState("");
   const [name, setName] = useState("");
+
+  const [workspaceSlug, setWorkspaceSlug] =
+    useState("");
+
   const [isRegistering, setIsRegistering] =
     useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  const [budgets, setBudgets] =
+    useState<Budget[]>([]);
 
-    if (!token) {
-      setCheckingAuth(false);
-      return;
+  const [budgetAmount, setBudgetAmount] =
+    useState("");
+
+  const [budgetCategory, setBudgetCategory] =
+    useState("");
+
+  const [budgetMonth, setBudgetMonth] =
+    useState("");
+
+  const [editingBudgetId, setEditingBudgetId] =
+    useState<number | null>(null);
+
+  const [budgetLoading, setBudgetLoading] =
+    useState(false);
+
+  async function loadBudgets() {
+    try {
+      const response = await getBudgets(
+        filterMonth || undefined,
+      );
+
+      setBudgets(response);
+    } catch (error) {
+      console.error(error);
+      setError(
+        "Failed to load budgets",
+      );
     }
-
-    loadExpenses();
-    loadSummary();
-  }, [filterMonth, filterCategory]);
+  }
 
   async function loadSummary() {
     try {
-      const response = await getExpenseSummary(
-        filterMonth || undefined,
-      );
+      const response =
+        await getExpenseSummary(
+          filterMonth || undefined,
+        );
 
       setSummary(response);
     } catch (error) {
       console.error(error);
-      setError("Failed to load expense summary");
+      setError(
+        "Failed to load expense summary",
+      );
     }
   }
 
-  async function loadExpenses() {
-    setLoading(true);
+  async function loadTimelineReport() {
+    try {
+      setTimelineLoading(true);
+      setTimelineError("");
+
+      const response = await getTimelineReport(
+        timelineFrom,
+        timelineTo,
+        timelineGroupBy,
+      );
+
+      setTimelineReport(response);
+    } catch (error) {
+      console.error(
+        "Failed to load timeline report:",
+        error,
+      );
+      setTimelineReport(null);
+      setTimelineError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load the timeline report.",
+      );
+    } finally {
+      setTimelineLoading(false);
+    }
+  }
+
+  async function loadSubscription() {
+    try {
+      setSubscriptionError("");
+      const response = await getSubscription();
+      setSubscription(response);
+      setSelectedPlan(response.plan);
+    } catch (error) {
+      console.error(
+        "Failed to load subscription:",
+        error,
+      );
+
+      if (
+        error instanceof Error &&
+        error.message === "No subscription found"
+      ) {
+        setSubscription(null);
+        return;
+      }
+
+      setSubscriptionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load subscription",
+      );
+    }
+  }
+
+  async function handleSubscriptionChange() {
+    try {
+      setSubscriptionLoading(true);
+      setSubscriptionError("");
+
+      const response = subscription
+        ? await changeSubscription(selectedPlan)
+        : await createSubscription(selectedPlan);
+
+      setSubscription(response);
+      setSelectedPlan(response.plan);
+      await loadSubscription();
+      await loadTimelineReport();
+    } catch (error) {
+      console.error(
+        "Failed to update subscription:",
+        error,
+      );
+
+      setSubscriptionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update subscription",
+      );
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }
+
+  async function loadExpenses(
+    pageToLoad: number = 1,
+  ) {
+    if (pageToLoad === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     setError("");
 
     try {
       const response = await getExpenses(
         filterMonth || undefined,
         filterCategory || undefined,
+        pageToLoad,
+        10,
       );
-      setExpenses(response.data);
+
+      if (pageToLoad === 1) {
+        setExpenses(response.data);
+      } else {
+        setExpenses((current) => [
+          ...current,
+          ...response.data,
+        ]);
+      }
+
+      setPage(pageToLoad);
+
+      setHasMore(
+        pageToLoad <
+        response.pagination.totalPages,
+      );
     } catch (error) {
       console.error(error);
-      localStorage.removeItem("token");
-      setError("Your session has expired. Please log in again.");
+
+      setError(
+        pageToLoad === 1
+          ? "Failed to load expenses"
+          : "Failed to load more expenses",
+      );
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setCheckingAuth(false);
     }
   }
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  const lastExpenseRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loadingMore || !hasMore) {
+        return;
+      }
+
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+
+      observerRef.current =
+        new IntersectionObserver(
+          (entries) => {
+            if (
+              entries[0].isIntersecting &&
+              !loadingMore &&
+              hasMore
+            ) {
+              loadExpenses(page + 1);
+            }
+          },
+          {
+            threshold: 0.1,
+          },
+        );
+
+      if (node) {
+        observerRef.current.observe(node);
+      }
+    },
+    [loadingMore, hasMore, page],
+  );
+
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      setCheckingAuth(false);
+      return;
+    }
+
+    setExpenses([]);
+    setPage(1);
+    setHasMore(true);
+
+    loadExpenses(1);
+    loadSummary();
+    loadBudgets();
+    loadTimelineReport();
+    loadSubscription();
+  }, [filterMonth, filterCategory]);
+
+  async function handleLogin(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     setLoading(true);
     setError("");
 
     try {
-      const response = await login(email, password);
+      const response = await login(
+        email,
+        password,
+      );
 
-      localStorage.setItem("token", response.token);
+      localStorage.setItem(
+        "token",
+        response.token,
+      );
+
+      setCheckingAuth(false);
 
       await loadExpenses();
+      await loadSummary();
+      await loadBudgets();
+      await loadTimelineReport();
+      await loadSubscription();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
         setError("Failed to login");
       }
-
+    } finally {
       setLoading(false);
     }
   }
+
   async function handleRegister(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -152,6 +498,7 @@ function App() {
         name,
         email,
         password,
+        workspaceSlug,
       );
 
       localStorage.setItem(
@@ -159,17 +506,26 @@ function App() {
         response.token,
       );
 
+      setCheckingAuth(false);
+
       await loadExpenses();
+      await loadSummary();
+      await loadBudgets();
+      await loadTimelineReport();
+      await loadSubscription();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Failed to create account");
+        setError(
+          "Failed to create account",
+        );
       }
-
+    } finally {
       setLoading(false);
     }
   }
+
   async function handleExpenseSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -177,6 +533,20 @@ function App() {
 
     setLoading(true);
     setError("");
+
+    const today = getTodayInputValue();
+
+    if (!date) {
+      setError("Please select an expense date.");
+      setLoading(false);
+      return;
+    }
+
+    if (date > today) {
+      setError("Date cannot be in the future.");
+      setLoading(false);
+      return;
+    }
 
     try {
       if (editingExpenseId !== null) {
@@ -202,18 +572,25 @@ function App() {
       setNote("");
       setEditingExpenseId(null);
 
-      await loadExpenses();
+      await loadExpenses(1);
+      await loadSummary();
+      await loadBudgets();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Failed to save expense");
+        setError(
+          "Failed to save expense",
+        );
       }
-
+    } finally {
       setLoading(false);
     }
   }
-  function handleEditExpense(expense: Expense) {
+
+  function handleEditExpense(
+    expense: Expense,
+  ) {
     setEditingExpenseId(expense.id);
     setAmount(String(expense.amount));
     setCategory(expense.category);
@@ -226,6 +603,11 @@ function App() {
 
     setNote(expense.note || "");
     setError("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   function handleCancelEdit() {
@@ -235,7 +617,10 @@ function App() {
     setDate("");
     setNote("");
   }
-  async function handleDeleteExpense(id: number) {
+
+  async function handleDeleteExpense(
+    id: number,
+  ) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this expense?",
     );
@@ -254,44 +639,71 @@ function App() {
         handleCancelEdit();
       }
 
-      await loadExpenses();
+      await loadExpenses(1);
+      await loadSummary();
+      await loadBudgets();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Failed to delete expense");
+        setError(
+          "Failed to delete expense",
+        );
       }
-
+    } finally {
       setLoading(false);
     }
   }
 
   function handleExportCsv() {
+    if (!subscription?.entitlements?.features.csvExport) {
+      setError("CSV export is not included in your current plan. Upgrade to PRO to export expenses.");
+      return;
+    }
+
     if (expenses.length === 0) {
       return;
     }
 
-    const csv = buildExpensesCsv(expenses);
+    const csv =
+      buildExpensesCsv(expenses);
+
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8;",
     });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
 
     link.href = url;
     link.download = "expenses.csv";
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
     URL.revokeObjectURL(url);
   }
 
   function handleLogout() {
     localStorage.removeItem("token");
+
     setExpenses([]);
+    setSummary(null);
+    setBudgets([]);
+    setTimelineReport(null);
+    setSubscription(null);
+    setSubscriptionError("");
+    setTimelineError("");
+
     setEmail("");
     setPassword("");
     setError("");
+
+    setCheckingAuth(false);
   }
 
   if (checkingAuth) {
@@ -302,8 +714,8 @@ function App() {
     );
   }
 
-  const isLoggedIn = localStorage.getItem("token");
-
+  const isLoggedIn =
+    localStorage.getItem("token");
 
   if (!isLoggedIn) {
     return (
@@ -329,23 +741,44 @@ function App() {
                 ? handleRegister
                 : handleLogin
             }
-          >{isRegistering && (
-            <>
-              <label htmlFor="name">
-                Name
-              </label>
+          >
+            {isRegistering && (
+              <>
+                <label htmlFor="name">
+                  Name
+                </label>
 
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(event) =>
-                  setName(event.target.value)
-                }
-                required
-              />
-            </>
-          )}
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(event) =>
+                    setName(
+                      event.target.value,
+                    )
+                  }
+                  required
+                />
+
+                <label htmlFor="workspace-slug">
+                  Workspace slug (optional)
+                </label>
+
+                <input
+                  id="workspace-slug"
+                  type="text"
+                  value={workspaceSlug}
+                  onChange={(event) =>
+                    setWorkspaceSlug(event.target.value)
+                  }
+                  placeholder="e.g. acme-finance"
+                />
+                <small className="workspace-hint">
+                  Choose a new slug to create a workspace, or enter an existing slug to join it.
+                </small>
+              </>
+            )}
+
             <label htmlFor="email">
               Email
             </label>
@@ -355,7 +788,9 @@ function App() {
               type="email"
               value={email}
               onChange={(event) =>
-                setEmail(event.target.value)
+                setEmail(
+                  event.target.value,
+                )
               }
               required
             />
@@ -369,7 +804,9 @@ function App() {
               type="password"
               value={password}
               onChange={(event) =>
-                setPassword(event.target.value)
+                setPassword(
+                  event.target.value,
+                )
               }
               required
             />
@@ -378,20 +815,23 @@ function App() {
               type="submit"
               disabled={loading}
             >
-              {loading ? isRegistering
-                ? "Creating account..."
-                : "Signing in..."
+              {loading
+                ? isRegistering
+                  ? "Creating account..."
+                  : "Signing in..."
                 : isRegistering
                   ? "Create Account"
                   : "Sign In"}
-
             </button>
           </form>
+
           <button
             type="button"
             className="auth-toggle"
             onClick={() => {
-              setIsRegistering(!isRegistering);
+              setIsRegistering(
+                !isRegistering,
+              );
               setError("");
             }}
           >
@@ -403,6 +843,13 @@ function App() {
       </main>
     );
   }
+
+  const canManageSubscription = subscription?.role === "OWNER";
+  const canUseBudgets = subscription?.entitlements?.features.budgets ?? false;
+  const canUseTimeline = subscription?.entitlements?.features.timelineReports ?? false;
+  const canExportCsv = subscription?.entitlements?.features.csvExport ?? false;
+  const quota = subscription?.entitlements?.limits.maxExpensesPerMonth;
+  const usage = subscription?.entitlements?.usage?.expensesThisMonth;
 
   return (
     <main className="app">
@@ -421,6 +868,7 @@ function App() {
           Logout
         </button>
       </header>
+
       <section className="expense-form-container">
         <h2>
           {editingExpenseId !== null
@@ -443,7 +891,9 @@ function App() {
             step="0.01"
             value={amount}
             onChange={(event) =>
-              setAmount(event.target.value)
+              setAmount(
+                event.target.value,
+              )
             }
             required
           />
@@ -457,7 +907,9 @@ function App() {
             type="text"
             value={category}
             onChange={(event) =>
-              setCategory(event.target.value)
+              setCategory(
+                event.target.value,
+              )
             }
             required
           />
@@ -469,10 +921,25 @@ function App() {
           <input
             id="date"
             type="date"
+            max={getTodayInputValue()}
             value={date}
-            onChange={(event) =>
-              setDate(event.target.value)
-            }
+            onChange={(event) => {
+              const selectedDate =
+                event.target.value;
+
+              if (
+                selectedDate &&
+                selectedDate > getTodayInputValue()
+              ) {
+                setError(
+                  "Date cannot be in the future.",
+                );
+                return;
+              }
+
+              setError("");
+              setDate(selectedDate);
+            }}
             required
           />
 
@@ -485,7 +952,9 @@ function App() {
             type="text"
             value={note}
             onChange={(event) =>
-              setNote(event.target.value)
+              setNote(
+                event.target.value,
+              )
             }
           />
 
@@ -494,9 +963,12 @@ function App() {
             disabled={loading}
           >
             {loading
-              ? "Adding..."
-              : "Add Expense"}
+              ? "Saving..."
+              : editingExpenseId !== null
+                ? "Update Expense"
+                : "Add Expense"}
           </button>
+
           {editingExpenseId !== null && (
             <button
               type="button"
@@ -508,6 +980,7 @@ function App() {
           )}
         </form>
       </section>
+
       <section className="filters">
         <h2>Filter Expenses</h2>
 
@@ -520,7 +993,9 @@ function App() {
           type="month"
           value={filterMonth}
           onChange={(event) =>
-            setFilterMonth(event.target.value)
+            setFilterMonth(
+              event.target.value,
+            )
           }
         />
 
@@ -534,7 +1009,9 @@ function App() {
           placeholder="e.g. Food"
           value={filterCategory}
           onChange={(event) =>
-            setFilterCategory(event.target.value)
+            setFilterCategory(
+              event.target.value,
+            )
           }
         />
 
@@ -548,152 +1025,1020 @@ function App() {
           Clear Filters
         </button>
       </section>
+
+      <section className="budget-section">
+        <div className="budget-header">
+          <div>
+            <h2>Monthly Budgets</h2>
+            <p>
+              Set spending limits for
+              each category.
+            </p>
+          </div>
+        </div>
+
+        {!canUseBudgets && subscription && (
+          <p className="feature-lock">
+            Budgets are not included in your current plan. Upgrade to PRO to manage category budgets.
+          </p>
+        )}
+
+        <form
+          className="budget-form"
+          onSubmit={async (event) => {
+            event.preventDefault();
+
+            if (!canUseBudgets) {
+              setError("Budgets are not included in your current plan. Upgrade to PRO to use this feature.");
+              return;
+            }
+
+            const budgetValue =
+              Number(budgetAmount);
+
+            const month =
+              budgetMonth || filterMonth;
+
+            if (
+              !budgetValue ||
+              budgetValue <= 0 ||
+              !budgetCategory ||
+              !month
+            ) {
+              setError(
+                "Budget amount, category, and month are required.",
+              );
+              return;
+            }
+
+            setBudgetLoading(true);
+            setError("");
+
+            try {
+              if (
+                editingBudgetId !== null
+              ) {
+                await updateBudget(
+                  editingBudgetId,
+                  budgetValue,
+                  budgetCategory,
+                  month,
+                );
+              } else {
+                await createBudget(
+                  budgetValue,
+                  budgetCategory,
+                  month,
+                );
+              }
+
+              setBudgetAmount("");
+              setBudgetCategory("");
+              setBudgetMonth("");
+              setEditingBudgetId(null);
+
+              await loadBudgets();
+            } catch (error) {
+              console.error(error);
+
+              setError(
+                "Failed to save budget",
+              );
+            } finally {
+              setBudgetLoading(false);
+            }
+          }}
+        >
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder="Monthly budget"
+            value={budgetAmount}
+            disabled={!canUseBudgets}
+            onChange={(event) =>
+              setBudgetAmount(
+                event.target.value,
+              )
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Category"
+            value={budgetCategory}
+            disabled={!canUseBudgets}
+            onChange={(event) =>
+              setBudgetCategory(
+                event.target.value,
+              )
+            }
+          />
+
+          <input
+            type="month"
+            value={
+              budgetMonth || filterMonth
+            }
+            disabled={!canUseBudgets}
+            onChange={(event) =>
+              setBudgetMonth(
+                event.target.value,
+              )
+            }
+          />
+
+          <button
+            type="submit"
+            disabled={budgetLoading || !canUseBudgets}
+          >
+            {budgetLoading
+              ? "Saving..."
+              : editingBudgetId !== null
+                ? "Update Budget"
+                : "Set Budget"}
+          </button>
+
+          {editingBudgetId !== null && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingBudgetId(null);
+                setBudgetAmount("");
+                setBudgetCategory("");
+                setBudgetMonth("");
+              }}
+              disabled={budgetLoading}
+            >
+              Cancel
+            </button>
+          )}
+        </form>
+
+        <div className="budget-list">
+          {budgets.length === 0 ? (
+            <div className="budget-empty">
+              No budgets set for this
+              month.
+            </div>
+          ) : (
+            budgets.map((budget) => {
+              const categorySpending =
+                summary?.byCategory.find(
+                  (item) =>
+                    item.category ===
+                    budget.category,
+                )?.total ?? 0;
+
+              const budgetValue =
+                Number(budget.amount);
+
+              const isOverBudget =
+                categorySpending >
+                budgetValue;
+
+              const percentage =
+                budgetValue > 0
+                  ? Math.min(
+                    (categorySpending /
+                      budgetValue) *
+                    100,
+                    100,
+                  )
+                  : 0;
+
+              return (
+                <div
+                  className={`budget-card ${isOverBudget
+                    ? "over-budget"
+                    : ""
+                    }`}
+                  key={budget.id}
+                >
+                  <div className="budget-card-header">
+                    <div>
+                      <h3>
+                        {budget.category}
+                      </h3>
+
+                      {isOverBudget && (
+                        <span className="budget-warning">
+                          Over budget
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="budget-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBudgetId(
+                            budget.id,
+                          );
+
+                          setBudgetAmount(
+                            String(
+                              budgetValue,
+                            ),
+                          );
+
+                          setBudgetCategory(
+                            budget.category,
+                          );
+
+                          setBudgetMonth(
+                            budget.month,
+                          );
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const confirmed =
+                            window.confirm(
+                              "Delete this budget?",
+                            );
+
+                          if (!confirmed) {
+                            return;
+                          }
+
+                          try {
+                            await deleteBudget(
+                              budget.id,
+                            );
+
+                            await loadBudgets();
+                          } catch (error) {
+                            console.error(
+                              error,
+                            );
+
+                            setError(
+                              "Failed to delete budget",
+                            );
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="budget-values">
+                    <span>
+                      Spent: ₹
+                      {categorySpending.toFixed(
+                        2,
+                      )}
+                    </span>
+
+                    <span>
+                      Budget: ₹
+                      {budgetValue.toFixed(
+                        2,
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="budget-progress">
+                    <div
+                      className="budget-progress-bar"
+                      style={{
+                        width: `${percentage}%`,
+                      }}
+                    />
+                  </div>
+
+                  <p
+                    className={
+                      isOverBudget
+                        ? "budget-over-text"
+                        : "budget-remaining"
+                    }
+                  >
+                    {isOverBudget
+                      ? `₹${(
+                        categorySpending -
+                        budgetValue
+                      ).toFixed(
+                        2,
+                      )} over budget`
+                      : `₹${(
+                        budgetValue -
+                        categorySpending
+                      ).toFixed(
+                        2,
+                      )} remaining`}
+                  </p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
+
       {summary && (
         <section className="summary">
-          <h2>
-            Expense Summary
-            {filterMonth ? ` - ${filterMonth}` : ""}
-          </h2>
+          <div className="summary-heading">
+            <div>
+              <span className="summary-eyebrow">
+                SPENDING OVERVIEW
+              </span>
+
+              <h2>Monthly Spending</h2>
+
+              <p>
+                {filterMonth
+                  ? new Date(`${filterMonth}-01T00:00:00`).toLocaleDateString(
+                    "en-US",
+                    {
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )
+                  : "All recorded expenses"}
+              </p>
+            </div>
+          </div>
 
           <div className="summary-stats">
             <div>
-              <strong>Total</strong>
-              <p>₹{summary.total.toFixed(2)}</p>
+              <strong>Total Spent</strong>
+              <p>
+                ₹{summary.total.toFixed(2)}
+              </p>
+              <small>Across all categories</small>
             </div>
 
             <div>
-              <strong>Expenses</strong>
+              <strong>Transactions</strong>
               <p>{summary.count}</p>
+              <small>Expenses recorded</small>
             </div>
 
             <div>
-              <strong>Average</strong>
-              <p>₹{summary.average.toFixed(2)}</p>
+              <strong>Avg. Expense</strong>
+              <p>
+                ₹{summary.average.toFixed(2)}
+              </p>
+              <small>Per transaction</small>
             </div>
 
             <div>
-              <strong>Highest</strong>
-              <p>₹{summary.highest.toFixed(2)}</p>
+              <strong>Largest Expense</strong>
+              <p>
+                ₹{summary.highest.toFixed(2)}
+              </p>
+              <small>Highest single expense</small>
             </div>
           </div>
 
           <h3>By Category</h3>
 
-          {summary.byCategory.length === 0 ? (
-            <p>No expenses found for this month.</p>
+          {summary.byCategory.length ===
+            0 ? (
+            <p>
+              No expenses found for
+              this month.
+            </p>
           ) : (
             <div className="category-summary">
-              {summary.byCategory.map((item) => (
-                <div
-                  className="category-summary-row"
-                  key={item.category}
-                >
-                  <span>{item.category}</span>
+              {summary.byCategory.map(
+                (item) => (
+                  <div
+                    className="category-summary-row"
+                    key={item.category}
+                  >
+                    <span>
+                      {item.category}
+                    </span>
 
-                  <span>
-                    ₹{item.total.toFixed(2)}
-                  </span>
-                </div>
-              ))}
+                    <span>
+                      ₹
+                      {item.total.toFixed(
+                        2,
+                      )}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           )}
         </section>
-      )}
-
-      {loading && (<p>Loading expenses...</p>
       )}
 
       {error && (
         <p className="error">{error}</p>
       )}
 
-      {!loading && !error && expenses.length === 0 && (
-        <section className="empty-state">
-          <h2>No expenses found</h2>
-          <p>
-            Add your first expense to get started.
-          </p>
-        </section>
-      )}
+      {!loading &&
+        !error &&
+        expenses.length === 0 && (
+          <section className="empty-state">
+            <h2>No expenses found</h2>
 
-      {!loading && expenses.length > 0 && (
-        <section className="expense-list">
-          <div className="expense-list-header">
-            <h2>Your Expenses</h2>
+            <p>
+              Add your first expense to
+              get started.
+            </p>
+          </section>
+        )}
 
-            <button
-              type="button"
-              className="export-button"
-              onClick={handleExportCsv}
-              disabled={expenses.length === 0}
-              title={
-                expenses.length === 0
-                  ? "No expenses to export"
-                  : "Export the currently filtered expenses as CSV"
-              }
-            >
-              Export CSV
-            </button>
+      <section className="subscription-section">
+        <div className="subscription-header">
+          <div>
+            <span className="subscription-eyebrow">
+              ACCOUNT PLAN
+            </span>
+            <h2>Subscription & Licensing</h2>
+            <p>
+              Manage your organization's plan and license.
+            </p>
           </div>
 
-          <div className="expense-table">
-            <div className="table-header">
-              <span>Date</span>
-              <span>Category</span>
-              <span>Note</span>
-              <span>Amount</span>
-              <span>Actions</span>
+          {subscription && (
+            <span
+              className={`subscription-status ${subscription.status.toLowerCase()
+                }`}
+            >
+              <span className="subscription-status-dot" />
+              {subscription.status}
+            </span>
+          )}
+        </div>
+
+        {subscriptionError && (
+          <p className="error">{subscriptionError}</p>
+        )}
+
+        <div className="subscription-current">
+          <div>
+            <span className="subscription-label">
+              CURRENT PLAN
+            </span>
+            <strong>
+              {subscription
+                ? subscription.plan
+                : "No active plan"}
+            </strong>
+          </div>
+
+          {subscription && (
+            <div className="subscription-expiry">
+              <span className="subscription-label">
+                LICENSE EXPIRES
+              </span>
+              <strong>
+                {new Date(
+                  subscription.expiresAt,
+                ).toLocaleDateString()}
+              </strong>
+            </div>
+          )}
+        </div>
+
+        {subscription?.entitlements && (
+          <div className="entitlement-summary">
+            <span>
+              Monthly expenses: {usage ?? 0}{quota === null ? " / unlimited" : ` / ${quota ?? "—"}`}
+            </span>
+            <span>
+              Features: {subscription.entitlements.features.budgets ? "Budgets" : "No budgets"} · {subscription.entitlements.features.timelineReports ? "Timeline reports" : "No timeline reports"} · {subscription.entitlements.features.csvExport ? "CSV export" : "No CSV export"}
+            </span>
+          </div>
+        )}
+
+        <div className="subscription-divider" />
+
+        <div className="subscription-section-heading">
+          <div>
+            <h3>Choose a plan</h3>
+            <p>{canManageSubscription ? "Change the plan for this organization. This is a demo plan-management flow; no payment is processed." : "Only the workspace owner can change or cancel this subscription."}</p>
+          </div>
+        </div>
+
+        <div className="subscription-plans">
+          {(["FREE", "PRO", "BUSINESS"] as const).map(
+            (plan) => {
+              const isSelected =
+                selectedPlan === plan;
+              const isCurrent =
+                subscription?.plan === plan;
+
+              return (
+                <button
+                  key={plan}
+                  type="button"
+                  className={`subscription-plan ${isSelected ? "selected" : ""
+                    }`}
+                  onClick={() =>
+                    setSelectedPlan(plan)
+                  }
+                  disabled={!canManageSubscription}
+                  aria-pressed={isSelected}
+                >
+                  <div className="subscription-plan-top">
+                    <div>
+                      <span className="subscription-plan-name">
+                        {plan}
+                      </span>
+                      {isCurrent && (
+                        <span className="subscription-current-badge">
+                          Current
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="subscription-plan-check">
+                      {isSelected ? "✓" : ""}
+                    </span>
+                  </div>
+
+                  <span className="subscription-plan-period">
+                    {plan === "FREE"
+                      ? "12 month license"
+                      : "1 month license"}
+                  </span>
+                </button>
+              );
+            },
+          )}
+        </div>
+
+        <div className="subscription-action-row">
+          <button
+            type="button"
+            className="subscription-action"
+            onClick={handleSubscriptionChange}
+            disabled={
+              !canManageSubscription || subscriptionLoading ||
+              (subscription?.plan === selectedPlan &&
+                subscription.status === "ACTIVE")
+            }
+          >
+            {subscriptionLoading
+              ? "Updating..."
+              : subscription?.plan === selectedPlan &&
+                subscription.status === "ACTIVE"
+                ? "Current Plan"
+              : !canManageSubscription
+                ? "Owner access required"
+                : subscription
+                  ? `${selectedPlan === "FREE" ? "Downgrade" : "Change plan"} to ${selectedPlan}`
+                  : `Activate ${selectedPlan}`}
+          </button>
+        </div>
+
+        {subscription && canManageSubscription && (
+          <div className="subscription-license-card">
+            <div className="subscription-license-heading">
+              <div>
+                <span className="subscription-label">
+                  LICENSE INFORMATION
+                </span>
+                <h3>Organization license</h3>
+              </div>
+              <span className="subscription-license-badge">
+                Licensed
+              </span>
             </div>
 
-            {expenses.map((expense) => (
-              <div
-                className="expense-row"
-                key={expense.id}
-              >
-                <span>
-                  {new Date(
-                    expense.date,
-                  ).toLocaleDateString()}
-                </span>
+            <div className="subscription-license-key">
+              <span>License Key</span>
+              <code>{subscription.licenseKey}</code>
+            </div>
 
-                <span>
-                  {expense.category}
-                </span>
-
-                <span>
-                  {expense.note || "-"}
-                </span>
-
-                <span>
-                  ₹
-                  {Number(
-                    expense.amount,
-                  ).toFixed(2)}
-                </span>
-
-                <span>
-                  <button
-                    type="button"
-                    onClick={() => handleEditExpense(expense)}
-                    disabled={loading}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteExpense(expense.id)}
-                    disabled={loading}
-                  >
-                    Delete
-                  </button>
-                </span>
+            <div className="subscription-license-meta">
+              <div>
+                <span>Plan</span>
+                <strong>{subscription.plan}</strong>
               </div>
-            ))}
+
+              <div>
+                <span>Status</span>
+                <strong>{subscription.status}</strong>
+              </div>
+
+              <div>
+                <span>Start date</span>
+                <strong>
+                  {new Date(
+                    subscription.startsAt,
+                  ).toLocaleDateString()}
+                </strong>
+              </div>
+
+              <div>
+                <span>Expiry date</span>
+                <strong>
+                  {new Date(
+                    subscription.expiresAt,
+                  ).toLocaleDateString()}
+                </strong>
+              </div>
+            </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
+
+      <section className="chart-card">
+        <div className="chart-header">
+          <div>
+            <h2>Timeline Report</h2>
+            <p>
+              Track spending over your selected date range.
+            </p>
+          </div>
+        </div>
+
+        {!canUseTimeline && subscription && (
+          <p className="feature-lock">
+            Timeline reports are not included in your current plan. Upgrade to PRO to unlock this report.
+          </p>
+        )}
+
+        {timelineError && (
+          <p className="error">{timelineError}</p>
+        )}
+
+        <div className="timeline-controls">
+          <div className="timeline-field">
+            <label htmlFor="timeline-from">From</label>
+            <input
+              id="timeline-from"
+              type="date"
+              value={timelineFrom}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineFrom(event.target.value)
+              }
+            />
+          </div>
+
+          <div className="timeline-field">
+            <label htmlFor="timeline-to">To</label>
+            <input
+              id="timeline-to"
+              type="date"
+              value={timelineTo}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineTo(event.target.value)
+              }
+            />
+          </div>
+
+          <div className="timeline-field">
+            <label htmlFor="timeline-group">View</label>
+            <select
+              id="timeline-group"
+              value={timelineGroupBy}
+              disabled={!canUseTimeline}
+              onChange={(event) =>
+                setTimelineGroupBy(
+                  event.target.value as
+                  | "day"
+                  | "week"
+                  | "month",
+                )
+              }
+            >
+              <option value="day">Daily</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadTimelineReport}
+            disabled={timelineLoading || !canUseTimeline}
+          >
+            {timelineLoading
+              ? "Generating..."
+              : "Generate Report"}
+          </button>
+        </div>
+
+        {timelineReport && canUseTimeline && (
+          <>
+            <div className="summary-stats">
+              <div>
+                <strong>Total Spent</strong>
+                <p>
+                  ₹{timelineReport.total.toFixed(2)}
+                </p>
+                <small>Selected date range</small>
+              </div>
+
+              <div>
+                <strong>Transactions</strong>
+                <p>{timelineReport.count}</p>
+                <small>Expenses recorded</small>
+              </div>
+            </div>
+
+            {timelineReport.timeline.length > 0 ? (
+              <div className="chart-container">
+                <ResponsiveContainer
+                  width="100%"
+                  height={320}
+                >
+                  <BarChart
+                    data={timelineReport.timeline}
+                    margin={{
+                      top: 10,
+                      right: 20,
+                      left: 10,
+                      bottom: 10,
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id="timelineBar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4d8b70" />
+                        <stop offset="100%" stopColor="#2d6251" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      vertical={false}
+                      stroke="#e8e1d7"
+                      strokeDasharray="4 5"
+                    />
+
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={chartAxisStyle}
+                      minTickGap={28}
+                    />
+
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={chartAxisStyle}
+                      tickFormatter={formatCompactCurrency}
+                      width={56}
+                    />
+
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      labelFormatter={(label) => `Period: ${label}`}
+                      cursor={{ fill: "rgba(78, 125, 103, 0.08)" }}
+                      contentStyle={{
+                        border: "1px solid #ded5c9",
+                        borderRadius: 12,
+                        background: "rgba(255, 253, 249, 0.97)",
+                        boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
+                      }}
+                    />
+
+                    <Bar
+                      dataKey="total"
+                      name="Spending"
+                      fill="url(#timelineBar)"
+                      barSize={28}
+                      activeBar={{ fill: "#c18a58" }}
+                      radius={[
+                        6,
+                        6,
+                        0,
+                        0,
+                      ]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="chart-empty">
+                <p>
+                  No expenses found for this date range.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <div className="chart-card">
+        <div className="chart-header">
+          <div>
+            <h2>
+              Spending by Category
+            </h2>
+
+            <p>
+              Your spending breakdown
+              for the selected month.
+            </p>
+          </div>
+        </div>
+
+        {summary &&
+          summary.byCategory.length > 0 ? (
+          <div className="chart-container">
+            <ResponsiveContainer
+              width="100%"
+              height={320}
+            >
+              <BarChart
+                data={summary.byCategory}
+                margin={{
+                  top: 10,
+                  right: 20,
+                  left: 10,
+                  bottom: 10,
+                }}
+              >
+                <defs>
+                  <linearGradient id="categoryBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#b48952" />
+                    <stop offset="100%" stopColor="#87653d" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  vertical={false}
+                  stroke="#e8e1d7"
+                  strokeDasharray="4 5"
+                />
+
+                <XAxis
+                  dataKey="category"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={chartAxisStyle}
+                  interval={0}
+                />
+
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={chartAxisStyle}
+                  tickFormatter={formatCompactCurrency}
+                  width={56}
+                />
+
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value))}
+                  labelFormatter={(label) => `Category: ${label}`}
+                  cursor={{ fill: "rgba(180, 137, 82, 0.08)" }}
+                  contentStyle={{
+                    border: "1px solid #ded5c9",
+                    borderRadius: 12,
+                    background: "rgba(255, 253, 249, 0.97)",
+                    boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
+                  }}
+                />
+
+                <Bar
+                  dataKey="total"
+                  name="Spending"
+                  fill="url(#categoryBar)"
+                  barSize={36}
+                  activeBar={{ fill: "#547b69" }}
+                  radius={[
+                    6,
+                    6,
+                    0,
+                    0,
+                  ]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="chart-empty">
+            <p>
+              No spending data for
+              this month.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {!loading &&
+        expenses.length > 0 && (
+          <section className="expense-list">
+            <div className="expense-list-header">
+              <h2>Your Expenses</h2>
+
+              <button
+                type="button"
+                className="export-button"
+                onClick={
+                  handleExportCsv
+                }
+                disabled={
+                  expenses.length === 0 || !canExportCsv
+                }
+                title={
+                  expenses.length === 0
+                    ? "No expenses to export"
+                    : !canExportCsv
+                      ? "Upgrade to PRO to export expenses as CSV"
+                      : "Export the currently filtered expenses as CSV"
+                }
+              >
+                {canExportCsv ? "Export CSV" : "CSV export requires PRO"}
+              </button>
+            </div>
+
+            <div className="expense-table">
+              <div className="table-header">
+                <span>Date</span>
+                <span>Category</span>
+                <span>Note</span>
+                <span>Amount</span>
+                <span>Actions</span>
+              </div>
+
+              {expenses.map(
+                (expense, index) => (
+                  <div
+                    className="expense-row"
+                    key={expense.id}
+                    ref={
+                      index ===
+                        expenses.length - 1
+                        ? lastExpenseRef
+                        : undefined
+                    }
+                  >
+                    <span>
+                      {new Date(
+                        expense.date,
+                      ).toLocaleDateString()}
+                    </span>
+
+                    <span>
+                      {expense.category}
+                    </span>
+
+                    <span>
+                      {expense.note || "-"}
+                    </span>
+
+                    <span>
+                      ₹
+                      {Number(
+                        expense.amount,
+                      ).toFixed(2)}
+                    </span>
+
+                    <span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEditExpense(
+                            expense,
+                          )
+                        }
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDeleteExpense(
+                            expense.id,
+                          )
+                        }
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                    </span>
+                  </div>
+                ),
+              )}
+
+              {loadingMore && (
+                <div className="loading-more">
+                  Loading more
+                  expenses...
+                </div>
+              )}
+
+              {!loadingMore &&
+                !hasMore &&
+                expenses.length > 0 && (
+                  <div className="end-of-expenses">
+                    You've reached the
+                    end of your expenses.
+                  </div>
+                )}
+            </div>
+          </section>
+        )}
     </main>
   );
 }
 
 export default App;
+

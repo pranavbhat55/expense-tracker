@@ -1,5 +1,8 @@
 import express from "express";
+import subscriptionRoutes from "./routes/subscription.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 import cors from "cors";
+import budgetRoutes from "./routes/budget.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -21,6 +24,10 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/expenses", expenseRoutes);
+app.use("/budgets", budgetRoutes);
+app.use("/subscription", subscriptionRoutes);
+app.use("/subscriptions", subscriptionRoutes);
+app.use("/reports", reportRoutes);
 
 app.use("/auth", authRoutes);
 

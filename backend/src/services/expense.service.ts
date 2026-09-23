@@ -2,6 +2,7 @@ import { prisma } from "./prisma.js";
 
 export async function createExpense(
     userId: number,
+    tenantId: number,
     data: {
         amount: number;
         category: string;
@@ -18,12 +19,14 @@ export async function createExpense(
                 note: data.note,
             }),
             userId,
+            tenantId,
         },
     });
 }
 
 export async function getExpenses(
     userId: number,
+    tenantId: number,
     filters: {
         month?: string;
         category?: string;
@@ -33,6 +36,7 @@ export async function getExpenses(
 ) {
     const where: {
         userId: number;
+        tenantId: number;
         category?: string;
         date?: {
             gte: Date;
@@ -40,6 +44,7 @@ export async function getExpenses(
         };
     } = {
         userId,
+        tenantId,
     };
 
     if (filters.category) {
@@ -89,18 +94,22 @@ export async function getExpenses(
         },
     };
 }
+
 export async function getExpenseSummary(
     userId: number,
+    tenantId: number,
     month?: string,
 ) {
     const where: {
         userId: number;
+        tenantId: number;
         date?: {
             gte: Date;
             lt: Date;
         };
     } = {
         userId,
+        tenantId,
     };
 
     if (month) {
@@ -178,20 +187,25 @@ export async function getExpenseSummary(
         byCategory,
     };
 }
+
 export async function getExpenseById(
     id: number,
     userId: number,
+    tenantId: number,
 ) {
     return prisma.expense.findFirst({
         where: {
             id,
             userId,
+            tenantId,
         },
     });
 }
+
 export async function updateExpense(
     id: number,
     userId: number,
+    tenantId: number,
     data: {
         amount: number;
         category: string;
@@ -202,6 +216,7 @@ export async function updateExpense(
     const existingExpense = await getExpenseById(
         id,
         userId,
+        tenantId,
     );
 
     if (!existingExpense) {
@@ -226,10 +241,12 @@ export async function updateExpense(
 export async function deleteExpense(
     id: number,
     userId: number,
+    tenantId: number,
 ) {
     const existingExpense = await getExpenseById(
         id,
         userId,
+        tenantId,
     );
 
     if (!existingExpense) {
