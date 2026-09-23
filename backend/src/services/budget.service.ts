@@ -1,5 +1,6 @@
 import { prisma } from "./prisma.js";
 import { requireFeature } from "./entitlement.service.js";
+import { createAuditLog } from "./audit.service.js";
 
 export async function createBudget(
     userId: number,
@@ -11,7 +12,7 @@ export async function createBudget(
     },
 ) {
     await requireFeature(tenantId, "budgets");
-    return prisma.budget.create({
+    const budget = await prisma.budget.create({
         data: {
             amount: data.amount,
             category: data.category,
@@ -20,6 +21,8 @@ export async function createBudget(
             tenantId,
         },
     });
+    await createAuditLog({ tenantId, userId, action: "BUDGET_CREATED", entityType: "BUDGET", entityId: budget.id, metadata: { amount: Number(budget.amount), category: budget.category, month: budget.month } });
+    return budget;
 }
 
 export async function getBudgets(
@@ -76,7 +79,7 @@ export async function updateBudget(
         return null;
     }
 
-    return prisma.budget.update({
+    const budget = await prisma.budget.update({
         where: {
             id,
         },
@@ -86,6 +89,8 @@ export async function updateBudget(
             month: data.month,
         },
     });
+    await createAuditLog({ tenantId, userId, action: "BUDGET_UPDATED", entityType: "BUDGET", entityId: budget.id, metadata: { amount: Number(budget.amount), category: budget.category, month: budget.month } });
+    return budget;
 }
 
 export async function deleteBudget(
@@ -103,9 +108,11 @@ export async function deleteBudget(
         return null;
     }
 
-    return prisma.budget.delete({
+    const budget = await prisma.budget.delete({
         where: {
             id,
         },
     });
+    await createAuditLog({ tenantId, userId, action: "BUDGET_DELETED", entityType: "BUDGET", entityId: budget.id, metadata: { amount: Number(budget.amount), category: budget.category, month: budget.month } });
+    return budget;
 }

@@ -37,6 +37,7 @@ model Tenant {
   expenses     Expense[]
   budgets      Budget[]
   subscription Subscription?
+  auditLogs    AuditLog[]
 }
 
 model User {
@@ -51,6 +52,7 @@ model User {
 
   expenses  Expense[]
   budgets   Budget[]
+  auditLogs AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,4 +117,22 @@ model Subscription {
 
   @@index([tenantId, status])
   @@index([expiresAt])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int
+  userId     Int?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, action])
+  @@index([tenantId, entityType])
 }

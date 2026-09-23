@@ -5,6 +5,7 @@ import cors from "cors";
 import budgetRoutes from "./routes/budget.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import workspaceRoutes from "./routes/workspace.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -28,6 +29,7 @@ app.use("/budgets", budgetRoutes);
 app.use("/subscription", subscriptionRoutes);
 app.use("/subscriptions", subscriptionRoutes);
 app.use("/reports", reportRoutes);
+app.use("/workspace", workspaceRoutes);
 
 app.use("/auth", authRoutes);
 

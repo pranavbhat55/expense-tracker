@@ -5,6 +5,7 @@ import { AppError } from "../utils/AppError.js";
 import { prisma } from "./prisma.js";
 import { jwtSecret } from "../config/env.js";
 import { enforceSeatLimit } from "./entitlement.service.js";
+import { createAuditLog } from "./audit.service.js";
 
 function makeSlug(name: string) {
     return `${name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "workspace"}-${crypto.randomBytes(3).toString("hex")}`;
@@ -26,7 +27,8 @@ export async function registerUser(data: { name: string; email: string; password
             const tenant = await tx.tenant.findUnique({ where: { slug: data.workspaceSlug } });
             if (tenant) {
                 // The seat-limit pre-check is outside this transaction because the entitlement service uses the shared client.
-                return { tenant, user: await tx.user.create({ data: { name: data.name, email: data.email, password, tenantId: tenant.id, role: "MEMBER" } }) };
+                const user = await tx.user.create({ data: { name: data.name, email: data.email, password, tenantId: tenant.id, role: "MEMBER" } });
+                return { tenant, user };
             }
         }
         const tenant = await tx.tenant.create({
@@ -42,6 +44,9 @@ export async function registerUser(data: { name: string; email: string; password
         await tx.subscription.create({ data: { tenantId: tenant.id, plan: "FREE", status: "TRIALING", licenseKey: licenseKey(), startsAt, expiresAt } });
         return { tenant, user };
     });
+    if (data.workspaceSlug && result.user.role === "MEMBER") {
+        await createAuditLog({ tenantId: result.tenant.id, userId: result.user.id, action: "MEMBER_JOINED", entityType: "USER", entityId: result.user.id, metadata: { memberEmail: result.user.email, role: result.user.role } });
+    }
     return { id: result.user.id, name: result.user.name, email: result.user.email, tenantId: result.tenant.id, tenantName: result.tenant.name, role: result.user.role, createdAt: result.user.createdAt };
 }
 

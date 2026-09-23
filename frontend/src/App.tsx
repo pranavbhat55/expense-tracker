@@ -47,6 +47,15 @@ import {
   changeSubscription,
   type Subscription,
 } from "./api/subscription";
+import {
+  changeMemberRole,
+  getAuditLogs,
+  getMembers,
+  removeMember,
+  type AuditLog,
+  type WorkspaceMember,
+  type WorkspaceRole,
+} from "./api/workspace";
 
 
 import "./App.css";
@@ -86,6 +95,24 @@ function getTodayInputValue(): string {
   const day = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+export function describeAuditLog(log: AuditLog): string {
+  const metadata = log.metadata ?? {};
+  const actor = log.user?.name ?? "A workspace member";
+  switch (log.action) {
+    case "MEMBER_JOINED": return `${actor} joined the workspace`;
+    case "ROLE_CHANGED": return `${actor} changed a member role: ${String(metadata.previousRole ?? "")} → ${String(metadata.newRole ?? "")}`;
+    case "MEMBER_REMOVED": return `${actor} removed ${String(metadata.memberEmail ?? "a member")}`;
+    case "EXPENSE_CREATED": return `${actor} created an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
+    case "EXPENSE_UPDATED": return `${actor} updated an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
+    case "EXPENSE_DELETED": return `${actor} deleted an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
+    case "BUDGET_CREATED": return `${actor} created a budget for ${String(metadata.category ?? "")}`;
+    case "BUDGET_UPDATED": return `${actor} updated a budget for ${String(metadata.category ?? "")}`;
+    case "BUDGET_DELETED": return `${actor} deleted a budget for ${String(metadata.category ?? "")}`;
+    case "SUBSCRIPTION_PLAN_CHANGED": return `${actor} changed the subscription: ${String(metadata.previousPlan ?? "")} → ${String(metadata.newPlan ?? "")}`;
+    default: return `${actor} performed ${log.action.toLowerCase().replaceAll("_", " ")}`;
+  }
 }
 
 export function escapeCsvValue(
@@ -172,6 +199,15 @@ function App() {
 
   const [subscriptionError, setSubscriptionError] =
     useState("");
+
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditTotalPages, setAuditTotalPages] = useState(0);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
 
   const [timelineError, setTimelineError] =
     useState("");
@@ -446,6 +482,8 @@ function App() {
     loadBudgets();
     loadTimelineReport();
     loadSubscription();
+    loadMembers();
+    loadAuditLogs();
   }, [filterMonth, filterCategory]);
 
   async function handleLogin(
@@ -474,6 +512,8 @@ function App() {
       await loadBudgets();
       await loadTimelineReport();
       await loadSubscription();
+      await loadMembers();
+      await loadAuditLogs();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -513,6 +553,8 @@ function App() {
       await loadBudgets();
       await loadTimelineReport();
       await loadSubscription();
+      await loadMembers();
+      await loadAuditLogs();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -697,6 +739,10 @@ function App() {
     setTimelineReport(null);
     setSubscription(null);
     setSubscriptionError("");
+    setMembers([]);
+    setAuditLogs([]);
+    setMembersError("");
+    setAuditError("");
     setTimelineError("");
 
     setEmail("");
@@ -842,6 +888,54 @@ function App() {
         </section>
       </main>
     );
+  }
+
+  async function loadMembers() {
+    try {
+      setMembersLoading(true);
+      setMembersError("");
+      setMembers(await getMembers());
+    } catch (error) {
+      setMembersError(error instanceof Error ? error.message : "Failed to load workspace members");
+    } finally {
+      setMembersLoading(false);
+    }
+  }
+
+  async function loadAuditLogs(pageToLoad = 1) {
+    try {
+      setAuditLoading(true);
+      setAuditError("");
+      const response = await getAuditLogs(pageToLoad);
+      setAuditLogs(response.data);
+      setAuditPage(response.pagination.page);
+      setAuditTotalPages(response.pagination.totalPages);
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : "Failed to load workspace activity");
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
+  async function handleRoleChange(member: WorkspaceMember, role: WorkspaceRole) {
+    try {
+      setMembersError("");
+      await changeMemberRole(member.id, role);
+      await Promise.all([loadMembers(), loadAuditLogs(auditPage)]);
+    } catch (error) {
+      setMembersError(error instanceof Error ? error.message : "Failed to change member role");
+    }
+  }
+
+  async function handleRemoveMember(member: WorkspaceMember) {
+    if (!window.confirm(`Remove ${member.name} from this workspace?`)) return;
+    try {
+      setMembersError("");
+      await removeMember(member.id);
+      await Promise.all([loadMembers(), loadAuditLogs(auditPage)]);
+    } catch (error) {
+      setMembersError(error instanceof Error ? error.message : "Failed to remove member");
+    }
   }
 
   const canManageSubscription = subscription?.role === "OWNER";
@@ -1643,6 +1737,29 @@ function App() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="workspace-section">
+        <div className="workspace-heading"><div><span className="subscription-eyebrow">WORKSPACE</span><h2>Workspace Members</h2><p>People with access to this organization.</p></div></div>
+        {membersError && <p className="error">{membersError}</p>}
+        {membersLoading ? <p className="workspace-state">Loading members…</p> : members.length === 0 ? <p className="workspace-state">No workspace members found.</p> : (
+          <div className="members-table" role="table" aria-label="Workspace members">
+            <div className="members-row members-header" role="row"><span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span>Actions</span></div>
+            {members.map((member) => <div className="members-row" role="row" key={member.id}>
+              <span>{member.name}</span><span>{member.email}</span>
+              <span>{canManageSubscription ? <select aria-label={`Role for ${member.name}`} value={member.role} onChange={(event) => handleRoleChange(member, event.target.value as WorkspaceRole)}><option value="OWNER">OWNER</option><option value="ADMIN">ADMIN</option><option value="MEMBER">MEMBER</option></select> : member.role}</span>
+              <span>{new Date(member.createdAt).toLocaleDateString()}</span>
+              <span>{canManageSubscription ? <button className="member-remove" type="button" onClick={() => handleRemoveMember(member)}>Remove</button> : "—"}</span>
+            </div>)}
+          </div>
+        )}
+      </section>
+
+      <section className="workspace-section activity-section">
+        <div className="workspace-heading"><div><span className="subscription-eyebrow">ACTIVITY</span><h2>Workspace Activity</h2><p>A tenant-scoped record of workspace changes.</p></div></div>
+        {auditError && <p className="error">{auditError}</p>}
+        {auditLoading ? <p className="workspace-state">Loading activity…</p> : auditLogs.length === 0 ? <p className="workspace-state">No activity has been recorded yet.</p> : <div className="audit-list">{auditLogs.map((log) => <article className="audit-item" key={log.id}><time>{new Date(log.createdAt).toLocaleString()}</time><p>{describeAuditLog(log)}</p></article>)}</div>}
+        {auditTotalPages > 1 && <div className="audit-pagination"><button type="button" disabled={auditPage <= 1 || auditLoading} onClick={() => loadAuditLogs(auditPage - 1)}>Previous</button><span>Page {auditPage} of {auditTotalPages}</span><button type="button" disabled={auditPage >= auditTotalPages || auditLoading} onClick={() => loadAuditLogs(auditPage + 1)}>Next</button></div>}
       </section>
 
       <section className="chart-card">

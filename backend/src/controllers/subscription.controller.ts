@@ -53,6 +53,7 @@ export async function createSubscriptionController(
 
         await createSubscription(
             req.tenantId,
+            req.userId,
             plan,
         );
 
@@ -105,6 +106,7 @@ export async function changeSubscriptionController(
 
         await changeSubscription(
             req.tenantId,
+            req.userId,
             plan,
         );
 

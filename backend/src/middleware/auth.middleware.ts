@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AppError } from "../utils/AppError.js";
 import { jwtSecret } from "../config/env.js";
+import { prisma } from "../services/prisma.js";
 
 interface JwtPayload {
     userId: number;
@@ -10,7 +11,7 @@ interface JwtPayload {
     role: "OWNER" | "ADMIN" | "MEMBER";
 }
 
-export function authenticate(
+export async function authenticate(
     req: Request,
     _res: Response,
     next: NextFunction,
@@ -45,9 +46,19 @@ export function authenticate(
 
         const payload = decoded as JwtPayload;
 
+        // The token supplies the tenant context, while the database confirms
+        // that the subject remains a member and that its current role is used.
+        // This immediately revokes access after removal and prevents stale role
+        // claims from retaining owner permissions.
+        const member = await prisma.user.findFirst({
+            where: { id: payload.userId, tenantId: payload.tenantId },
+            select: { role: true },
+        });
+        if (!member) throw new AppError("Workspace membership is no longer active", 401);
+
         req.userId = payload.userId;
         req.tenantId = payload.tenantId;
-        req.role = payload.role;
+        req.role = member.role;
 
         next();
     } catch (error) {

@@ -1,4 +1,5 @@
 import { prisma } from "./prisma.js";
+import { createAuditLog } from "./audit.service.js";
 
 export async function createExpense(
     userId: number,
@@ -10,7 +11,7 @@ export async function createExpense(
         note?: string;
     },
 ) {
-    return prisma.expense.create({
+    const expense = await prisma.expense.create({
         data: {
             amount: data.amount,
             category: data.category,
@@ -22,6 +23,8 @@ export async function createExpense(
             tenantId,
         },
     });
+    await createAuditLog({ tenantId, userId, action: "EXPENSE_CREATED", entityType: "EXPENSE", entityId: expense.id, metadata: { amount: Number(expense.amount), category: expense.category } });
+    return expense;
 }
 
 export async function getExpenses(
@@ -223,7 +226,7 @@ export async function updateExpense(
         return null;
     }
 
-    return prisma.expense.update({
+    const expense = await prisma.expense.update({
         where: {
             id,
         },
@@ -236,6 +239,8 @@ export async function updateExpense(
             }),
         },
     });
+    await createAuditLog({ tenantId, userId, action: "EXPENSE_UPDATED", entityType: "EXPENSE", entityId: expense.id, metadata: { amount: Number(expense.amount), category: expense.category } });
+    return expense;
 }
 
 export async function deleteExpense(
@@ -253,9 +258,11 @@ export async function deleteExpense(
         return null;
     }
 
-    return prisma.expense.delete({
+    const expense = await prisma.expense.delete({
         where: {
             id,
         },
     });
+    await createAuditLog({ tenantId, userId, action: "EXPENSE_DELETED", entityType: "EXPENSE", entityId: expense.id, metadata: { amount: Number(expense.amount), category: expense.category } });
+    return expense;
 }

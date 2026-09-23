@@ -2502,6 +2502,28 @@ input[type="month"]:focus {
   }
 }
 
+.workspace-section {
+  margin-top: 28px;
+  padding: 28px;
+  border: 1px solid #ded7cc;
+  border-radius: 18px;
+  background: #fffaf3;
+}
+
+.workspace-heading h2 { margin: 5px 0; font-size: 1.4rem; }
+.workspace-heading p, .workspace-state { color: #77716b; }
+.members-table { overflow-x: auto; }
+.members-row { display: grid; grid-template-columns: 1.1fr 1.4fr .8fr .9fr .7fr; gap: 12px; align-items: center; min-width: 700px; padding: 13px 8px; border-bottom: 1px solid #e8e0d6; }
+.members-header { color: #77716b; font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.members-row select, .member-remove, .audit-pagination button { min-height: 34px; padding: 6px 9px; border: 1px solid #d8cec2; border-radius: 7px; background: #fff; color: #4e5d53; font-weight: 700; }
+.member-remove { color: #a55e51; border-color: #e8cbc3; background: #fff4f1; cursor: pointer; }
+.audit-list { display: grid; gap: 10px; }
+.audit-item { padding: 13px 15px; border-left: 3px solid #94b09e; border-radius: 8px; background: #f8f4ed; }
+.audit-item time { color: #77716b; font-size: .8rem; }
+.audit-item p { margin: 5px 0 0; color: #302d2a; }
+.audit-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; color: #77716b; font-size: .85rem; }
+.audit-pagination button:disabled { opacity: .5; cursor: not-allowed; }
+
 /* Subscription & Licensing */
 .subscription-section {
   margin-top: 24px;

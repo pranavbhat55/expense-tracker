@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "./prisma.js";
 import { AppError } from "../utils/AppError.js";
+import { createAuditLog } from "./audit.service.js";
 
 function generateLicenseKey(): string {
     return `EXP-${crypto.randomBytes(12).toString("hex").toUpperCase()}`;
@@ -44,6 +45,7 @@ export async function getSubscription(
 
 export async function createSubscription(
     tenantId: number,
+    actorId: number,
     plan: "FREE" | "PRO" | "BUSINESS",
 ) {
     const existingSubscription =
@@ -62,7 +64,7 @@ export async function createSubscription(
 
     const months = plan === "FREE" ? 12 : 1;
 
-    return prisma.subscription.create({
+    const subscription = await prisma.subscription.create({
         data: {
             tenantId,
             plan,
@@ -72,10 +74,13 @@ export async function createSubscription(
             expiresAt: getExpiryDate(months),
         },
     });
+    await createAuditLog({ tenantId, userId: actorId, action: "SUBSCRIPTION_PLAN_CHANGED", entityType: "SUBSCRIPTION", entityId: subscription.id, metadata: { previousPlan: "NONE", newPlan: plan } });
+    return subscription;
 }
 
 export async function changeSubscription(
     tenantId: number,
+    actorId: number,
     plan: "FREE" | "PRO" | "BUSINESS",
 ) {
     const subscription = await prisma.subscription.findUnique({
@@ -91,7 +96,7 @@ export async function changeSubscription(
         );
     }
 
-    return prisma.subscription.update({
+    const updated = await prisma.subscription.update({
         where: {
             id: subscription.id,
         },
@@ -105,4 +110,6 @@ export async function changeSubscription(
             ),
         },
     });
+    await createAuditLog({ tenantId, userId: actorId, action: "SUBSCRIPTION_PLAN_CHANGED", entityType: "SUBSCRIPTION", entityId: updated.id, metadata: { previousPlan: subscription.plan, newPlan: plan } });
+    return updated;
 }
