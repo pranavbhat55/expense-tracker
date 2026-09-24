@@ -67,6 +67,9 @@ import { SpendingChart } from "./components/dashboard/SpendingChart";
 import { CategoryBreakdown } from "./components/dashboard/CategoryBreakdown";
 import { BudgetHealth } from "./components/dashboard/BudgetHealth";
 import { RecentExpenses } from "./components/dashboard/RecentExpenses";
+import { ExpenseFilters } from "./components/expenses/ExpenseFilters";
+import { ExpenseTable } from "./components/expenses/ExpenseTable";
+import { ExpenseDrawer } from "./components/expenses/ExpenseDrawer";
 
 const CSV_COLUMNS = [
   "Date",
@@ -171,6 +174,7 @@ export function buildExpensesCsv(
 function App() {
   const [view, setView] = useState<NavKey>("dashboard");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [expenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] =
     useState(true);
@@ -1004,165 +1008,49 @@ function App() {
           onMenuClick={() => setMobileNavOpen(true)}
         />
         <div className="app-shell__content">
-      <section
-        className="expense-form-container"
-        style={{ display: view === "expenses" ? undefined : "none" }}
-      >
-        <h2>
-          {editingExpenseId !== null
-            ? "Edit Expense"
-            : "Add Expense"}
-        </h2>
-
-        <form
-          className="expense-form"
-          onSubmit={handleExpenseSubmit}
-        >
-          <label htmlFor="amount">
-            Amount
-          </label>
-
-          <input
-            id="amount"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={amount}
-            onChange={(event) =>
-              setAmount(
-                event.target.value,
-              )
-            }
-            required
-          />
-
-          <label htmlFor="category">
-            Category
-          </label>
-
-          <input
-            id="category"
-            type="text"
-            value={category}
-            onChange={(event) =>
-              setCategory(
-                event.target.value,
-              )
-            }
-            required
-          />
-
-          <label htmlFor="date">
-            Date
-          </label>
-
-          <input
-            id="date"
-            type="date"
-            max={getTodayInputValue()}
-            value={date}
-            onChange={(event) => {
-              const selectedDate =
-                event.target.value;
-
-              if (
-                selectedDate &&
-                selectedDate > getTodayInputValue()
-              ) {
-                setError(
-                  "Date cannot be in the future.",
-                );
-                return;
-              }
-
-              setError("");
-              setDate(selectedDate);
-            }}
-            required
-          />
-
-          <label htmlFor="note">
-            Note
-          </label>
-
-          <input
-            id="note"
-            type="text"
-            value={note}
-            onChange={(event) =>
-              setNote(
-                event.target.value,
-              )
-            }
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Saving..."
-              : editingExpenseId !== null
-                ? "Update Expense"
-                : "Add Expense"}
-          </button>
-
-          {editingExpenseId !== null && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          )}
-        </form>
-      </section>
+      <ExpenseDrawer
+        open={expenseDrawerOpen}
+        onClose={() => {
+          setExpenseDrawerOpen(false);
+          handleCancelEdit();
+        }}
+        isEditing={editingExpenseId !== null}
+        amount={amount}
+        category={category}
+        date={date}
+        note={note}
+        maxDate={getTodayInputValue()}
+        loading={loading}
+        onAmountChange={setAmount}
+        onCategoryChange={setCategory}
+        onDateChange={(selectedDate) => {
+          if (selectedDate && selectedDate > getTodayInputValue()) {
+            setError("Date cannot be in the future.");
+            return;
+          }
+          setError("");
+          setDate(selectedDate);
+        }}
+        onNoteChange={setNote}
+        onSubmit={async (event) => {
+          await handleExpenseSubmit(event);
+          setExpenseDrawerOpen(false);
+        }}
+      />
 
       <section className="filters" style={{ display: view === "expenses" ? undefined : "none" }}>
-        <h2>Filter Expenses</h2>
-
-        <label htmlFor="filter-month">
-          Month
-        </label>
-
-        <input
-          id="filter-month"
-          type="month"
-          value={filterMonth}
-          onChange={(event) =>
-            setFilterMonth(
-              event.target.value,
-            )
-          }
-        />
-
-        <label htmlFor="filter-category">
-          Category
-        </label>
-
-        <input
-          id="filter-category"
-          type="text"
-          placeholder="e.g. Food"
-          value={filterCategory}
-          onChange={(event) =>
-            setFilterCategory(
-              event.target.value,
-            )
-          }
-        />
-
-        <button
-          type="button"
-          onClick={() => {
+        <ExpenseFilters
+          filterMonth={filterMonth}
+          filterCategory={filterCategory}
+          onFilterMonthChange={setFilterMonth}
+          onFilterCategoryChange={setFilterCategory}
+          onClear={() => {
             setFilterMonth("");
             setFilterCategory("");
           }}
-        >
-          Clear Filters
-        </button>
+        />
       </section>
+
 
       <section className="budget-section" style={{ display: view === "budgets" ? undefined : "none" }}>
         <div className="budget-header">
@@ -1506,19 +1394,6 @@ function App() {
       {error && (
         <p className="error">{error}</p>
       )}
-
-      {!loading &&
-        !error &&
-        expenses.length === 0 && (
-          <section className="empty-state" style={{ display: view === "expenses" ? undefined : "none" }}>
-            <h2>No expenses found</h2>
-
-            <p>
-              Add your first expense to
-              get started.
-            </p>
-          </section>
-        )}
 
       <section className="subscription-section" style={{ display: view === "billing" ? undefined : "none" }}>
         <div className="subscription-header">
@@ -1921,122 +1796,26 @@ function App() {
 
 
 
-      {!loading &&
-        expenses.length > 0 && (
-          <section className="expense-list" style={{ display: view === "expenses" ? undefined : "none" }}>
-            <div className="expense-list-header">
-              <h2>Your Expenses</h2>
-
-              <button
-                type="button"
-                className="export-button"
-                onClick={
-                  handleExportCsv
-                }
-                disabled={
-                  expenses.length === 0 || !canExportCsv
-                }
-                title={
-                  expenses.length === 0
-                    ? "No expenses to export"
-                    : !canExportCsv
-                      ? "Upgrade to PRO to export expenses as CSV"
-                      : "Export the currently filtered expenses as CSV"
-                }
-              >
-                {canExportCsv ? "Export CSV" : "CSV export requires PRO"}
-              </button>
-            </div>
-
-            <div className="expense-table">
-              <div className="table-header">
-                <span>Date</span>
-                <span>Category</span>
-                <span>Note</span>
-                <span>Amount</span>
-                <span>Actions</span>
-              </div>
-
-              {expenses.map(
-                (expense, index) => (
-                  <div
-                    className="expense-row"
-                    key={expense.id}
-                    ref={
-                      index ===
-                        expenses.length - 1
-                        ? lastExpenseRef
-                        : undefined
-                    }
-                  >
-                    <span>
-                      {new Date(
-                        expense.date,
-                      ).toLocaleDateString()}
-                    </span>
-
-                    <span>
-                      {expense.category}
-                    </span>
-
-                    <span>
-                      {expense.note || "-"}
-                    </span>
-
-                    <span>
-                      ₹
-                      {Number(
-                        expense.amount,
-                      ).toFixed(2)}
-                    </span>
-
-                    <span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditExpense(
-                            expense,
-                          )
-                        }
-                        disabled={loading}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteExpense(
-                            expense.id,
-                          )
-                        }
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
-                    </span>
-                  </div>
-                ),
-              )}
-
-              {loadingMore && (
-                <div className="loading-more">
-                  Loading more
-                  expenses...
-                </div>
-              )}
-
-              {!loadingMore &&
-                !hasMore &&
-                expenses.length > 0 && (
-                  <div className="end-of-expenses">
-                    You've reached the
-                    end of your expenses.
-                  </div>
-                )}
-            </div>
-          </section>
-        )}
+      <section className="expense-list" style={{ display: view === "expenses" ? undefined : "none" }}>
+        <ExpenseTable
+          expenses={expenses}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          canExportCsv={canExportCsv}
+          onAddExpense={() => {
+            handleCancelEdit();
+            setExpenseDrawerOpen(true);
+          }}
+          onEditExpense={(expense) => {
+            handleEditExpense(expense);
+            setExpenseDrawerOpen(true);
+          }}
+          onDeleteExpense={handleDeleteExpense}
+          onExportCsv={handleExportCsv}
+          lastExpenseRef={lastExpenseRef}
+        />
+      </section>
         </div>
         <MobileNavigation active={view} onNavigate={setView} />
       </main>
