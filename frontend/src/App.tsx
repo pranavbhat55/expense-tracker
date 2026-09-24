@@ -62,6 +62,11 @@ import "./App.css";
 import { Sidebar, type NavKey } from "./components/layout/Sidebar";
 import { TopBar } from "./components/layout/TopBar";
 import { MobileNavigation } from "./components/layout/MobileNavigation";
+import { StatCards } from "./components/dashboard/StatCards";
+import { SpendingChart } from "./components/dashboard/SpendingChart";
+import { CategoryBreakdown } from "./components/dashboard/CategoryBreakdown";
+import { BudgetHealth } from "./components/dashboard/BudgetHealth";
+import { RecentExpenses } from "./components/dashboard/RecentExpenses";
 
 const CSV_COLUMNS = [
   "Date",
@@ -1474,94 +1479,28 @@ function App() {
         </div>
       </section>
 
-      {summary && (
-        <section className="summary" style={{ display: view === "dashboard" ? undefined : "none" }}>
-          <div className="summary-heading">
-            <div>
-              <span className="summary-eyebrow">
-                SPENDING OVERVIEW
-              </span>
-
-              <h2>Monthly Spending</h2>
-
-              <p>
-                {filterMonth
-                  ? new Date(`${filterMonth}-01T00:00:00`).toLocaleDateString(
-                    "en-US",
-                    {
-                      month: "long",
-                      year: "numeric",
-                    },
-                  )
-                  : "All recorded expenses"}
-              </p>
-            </div>
+      {view === "dashboard" && summary && (
+        <div className="db-dashboard-view">
+          <StatCards
+            summary={summary}
+            periodLabel={
+              filterMonth
+                ? new Date(`${filterMonth}-01T00:00:00`).toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })
+                : "All recorded expenses"
+            }
+          />
+          <div className="db-dashboard-grid">
+            <SpendingChart summary={summary} />
+            <CategoryBreakdown summary={summary} />
           </div>
-
-          <div className="summary-stats">
-            <div>
-              <strong>Total Spent</strong>
-              <p>
-                ₹{summary.total.toFixed(2)}
-              </p>
-              <small>Across all categories</small>
-            </div>
-
-            <div>
-              <strong>Transactions</strong>
-              <p>{summary.count}</p>
-              <small>Expenses recorded</small>
-            </div>
-
-            <div>
-              <strong>Avg. Expense</strong>
-              <p>
-                ₹{summary.average.toFixed(2)}
-              </p>
-              <small>Per transaction</small>
-            </div>
-
-            <div>
-              <strong>Largest Expense</strong>
-              <p>
-                ₹{summary.highest.toFixed(2)}
-              </p>
-              <small>Highest single expense</small>
-            </div>
+          <div className="db-dashboard-grid--secondary">
+            <BudgetHealth budgets={budgets} summary={summary} />
+            <RecentExpenses expenses={expenses} />
           </div>
-
-          <h3>By Category</h3>
-
-          {summary.byCategory.length ===
-            0 ? (
-            <p>
-              No expenses found for
-              this month.
-            </p>
-          ) : (
-            <div className="category-summary">
-              {summary.byCategory.map(
-                (item) => (
-                  <div
-                    className="category-summary-row"
-                    key={item.category}
-                  >
-                    <span>
-                      {item.category}
-                    </span>
-
-                    <span>
-                      ₹
-                      {item.total.toFixed(
-                        2,
-                      )}
-                    </span>
-                  </div>
-                ),
-              )}
-            </div>
-          )}
-        </section>
+        </div>
       )}
 
       {error && (
@@ -1980,101 +1919,7 @@ function App() {
         )}
       </section>
 
-      <div className="chart-card" style={{ display: view === "dashboard" ? undefined : "none" }}>
-        <div className="chart-header">
-          <div>
-            <h2>
-              Spending by Category
-            </h2>
 
-            <p>
-              Your spending breakdown
-              for the selected month.
-            </p>
-          </div>
-        </div>
-
-        {summary &&
-          summary.byCategory.length > 0 ? (
-          <div className="chart-container">
-            <ResponsiveContainer
-              width="100%"
-              height={320}
-            >
-              <BarChart
-                data={summary.byCategory}
-                margin={{
-                  top: 10,
-                  right: 20,
-                  left: 10,
-                  bottom: 10,
-                }}
-              >
-                <defs>
-                  <linearGradient id="categoryBar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#b48952" />
-                    <stop offset="100%" stopColor="#87653d" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  vertical={false}
-                  stroke="#e8e1d7"
-                  strokeDasharray="4 5"
-                />
-
-                <XAxis
-                  dataKey="category"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={chartAxisStyle}
-                  interval={0}
-                />
-
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={chartAxisStyle}
-                  tickFormatter={formatCompactCurrency}
-                  width={56}
-                />
-
-                <Tooltip
-                  formatter={(value) => formatCurrency(Number(value))}
-                  labelFormatter={(label) => `Category: ${label}`}
-                  cursor={{ fill: "rgba(180, 137, 82, 0.08)" }}
-                  contentStyle={{
-                    border: "1px solid #ded5c9",
-                    borderRadius: 12,
-                    background: "rgba(255, 253, 249, 0.97)",
-                    boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
-                  }}
-                />
-
-                <Bar
-                  dataKey="total"
-                  name="Spending"
-                  fill="url(#categoryBar)"
-                  barSize={36}
-                  activeBar={{ fill: "#547b69" }}
-                  radius={[
-                    6,
-                    6,
-                    0,
-                    0,
-                  ]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div className="chart-empty">
-            <p>
-              No spending data for
-              this month.
-            </p>
-          </div>
-        )}
-      </div>
 
       {!loading &&
         expenses.length > 0 && (
