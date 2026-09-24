@@ -59,6 +59,9 @@ import {
 
 
 import "./App.css";
+import { Sidebar, type NavKey } from "./components/layout/Sidebar";
+import { TopBar } from "./components/layout/TopBar";
+import { MobileNavigation } from "./components/layout/MobileNavigation";
 
 const CSV_COLUMNS = [
   "Date",
@@ -161,6 +164,8 @@ export function buildExpensesCsv(
 }
 
 function App() {
+  const [view, setView] = useState<NavKey>("dashboard");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] =
     useState(true);
@@ -945,25 +950,59 @@ function App() {
   const quota = subscription?.entitlements?.limits.maxExpensesPerMonth;
   const usage = subscription?.entitlements?.usage?.expensesThisMonth;
 
+  const viewTitles: Record<NavKey, string> = {
+    dashboard: "Dashboard",
+    expenses: "Expenses",
+    budgets: "Budgets",
+    timeline: "Timeline",
+    members: "Workspace Members",
+    activity: "Workspace Activity",
+    billing: "Billing",
+  };
+
   return (
-    <main className="app">
-      <header className="header">
-        <div>
-          <h1>Expense Tracker</h1>
-          <p>
-            Manage and track your expenses
-          </p>
-        </div>
-
-        <button
-          className="logout-button"
-          onClick={handleLogout}
+    <div className="app-shell">
+      {mobileNavOpen && (
+        <div
+          className="ui-modal__overlay"
+          style={{ zIndex: 30 }}
+          onClick={() => setMobileNavOpen(false)}
         >
-          Logout
-        </button>
-      </header>
-
-      <section className="expense-form-container">
+          <div onClick={(e) => e.stopPropagation()}>
+            <Sidebar
+              active={view}
+              onNavigate={(key) => {
+                setView(key);
+                setMobileNavOpen(false);
+              }}
+              workspaceName={workspaceSlug || "Your workspace"}
+              canViewMembers={canManageSubscription || members.length > 0}
+              canViewBilling={Boolean(subscription)}
+              plan={subscription?.plan ?? "FREE"}
+            />
+          </div>
+        </div>
+      )}
+      <Sidebar
+        active={view}
+        onNavigate={setView}
+        workspaceName={workspaceSlug || "Your workspace"}
+        canViewMembers={canManageSubscription || members.length > 0}
+        canViewBilling={Boolean(subscription)}
+        plan={subscription?.plan ?? "FREE"}
+      />
+      <main className="app-shell__main">
+        <TopBar
+          title={viewTitles[view]}
+          userEmail={email}
+          onLogout={handleLogout}
+          onMenuClick={() => setMobileNavOpen(true)}
+        />
+        <div className="app-shell__content">
+      <section
+        className="expense-form-container"
+        style={{ display: view === "expenses" ? undefined : "none" }}
+      >
         <h2>
           {editingExpenseId !== null
             ? "Edit Expense"
@@ -1075,7 +1114,7 @@ function App() {
         </form>
       </section>
 
-      <section className="filters">
+      <section className="filters" style={{ display: view === "expenses" ? undefined : "none" }}>
         <h2>Filter Expenses</h2>
 
         <label htmlFor="filter-month">
@@ -1120,7 +1159,7 @@ function App() {
         </button>
       </section>
 
-      <section className="budget-section">
+      <section className="budget-section" style={{ display: view === "budgets" ? undefined : "none" }}>
         <div className="budget-header">
           <div>
             <h2>Monthly Budgets</h2>
@@ -1436,7 +1475,7 @@ function App() {
       </section>
 
       {summary && (
-        <section className="summary">
+        <section className="summary" style={{ display: view === "dashboard" ? undefined : "none" }}>
           <div className="summary-heading">
             <div>
               <span className="summary-eyebrow">
@@ -1532,7 +1571,7 @@ function App() {
       {!loading &&
         !error &&
         expenses.length === 0 && (
-          <section className="empty-state">
+          <section className="empty-state" style={{ display: view === "expenses" ? undefined : "none" }}>
             <h2>No expenses found</h2>
 
             <p>
@@ -1542,7 +1581,7 @@ function App() {
           </section>
         )}
 
-      <section className="subscription-section">
+      <section className="subscription-section" style={{ display: view === "billing" ? undefined : "none" }}>
         <div className="subscription-header">
           <div>
             <span className="subscription-eyebrow">
@@ -1739,7 +1778,7 @@ function App() {
         )}
       </section>
 
-      <section className="workspace-section">
+      <section className="workspace-section" style={{ display: view === "members" ? undefined : "none" }}>
         <div className="workspace-heading"><div><span className="subscription-eyebrow">WORKSPACE</span><h2>Workspace Members</h2><p>People with access to this organization.</p></div></div>
         {membersError && <p className="error">{membersError}</p>}
         {membersLoading ? <p className="workspace-state">Loading members…</p> : members.length === 0 ? <p className="workspace-state">No workspace members found.</p> : (
@@ -1755,14 +1794,14 @@ function App() {
         )}
       </section>
 
-      <section className="workspace-section activity-section">
+      <section className="workspace-section activity-section" style={{ display: view === "activity" ? undefined : "none" }}>
         <div className="workspace-heading"><div><span className="subscription-eyebrow">ACTIVITY</span><h2>Workspace Activity</h2><p>A tenant-scoped record of workspace changes.</p></div></div>
         {auditError && <p className="error">{auditError}</p>}
         {auditLoading ? <p className="workspace-state">Loading activity…</p> : auditLogs.length === 0 ? <p className="workspace-state">No activity has been recorded yet.</p> : <div className="audit-list">{auditLogs.map((log) => <article className="audit-item" key={log.id}><time>{new Date(log.createdAt).toLocaleString()}</time><p>{describeAuditLog(log)}</p></article>)}</div>}
         {auditTotalPages > 1 && <div className="audit-pagination"><button type="button" disabled={auditPage <= 1 || auditLoading} onClick={() => loadAuditLogs(auditPage - 1)}>Previous</button><span>Page {auditPage} of {auditTotalPages}</span><button type="button" disabled={auditPage >= auditTotalPages || auditLoading} onClick={() => loadAuditLogs(auditPage + 1)}>Next</button></div>}
       </section>
 
-      <section className="chart-card">
+      <section className="chart-card" style={{ display: view === "timeline" ? undefined : "none" }}>
         <div className="chart-header">
           <div>
             <h2>Timeline Report</h2>
@@ -1941,7 +1980,7 @@ function App() {
         )}
       </section>
 
-      <div className="chart-card">
+      <div className="chart-card" style={{ display: view === "dashboard" ? undefined : "none" }}>
         <div className="chart-header">
           <div>
             <h2>
@@ -2039,7 +2078,7 @@ function App() {
 
       {!loading &&
         expenses.length > 0 && (
-          <section className="expense-list">
+          <section className="expense-list" style={{ display: view === "expenses" ? undefined : "none" }}>
             <div className="expense-list-header">
               <h2>Your Expenses</h2>
 
@@ -2153,7 +2192,10 @@ function App() {
             </div>
           </section>
         )}
-    </main>
+        </div>
+        <MobileNavigation active={view} onNavigate={setView} />
+      </main>
+    </div>
   );
 }
 
