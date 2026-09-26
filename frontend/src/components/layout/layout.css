@@ -28,7 +28,7 @@
   background: var(--brand-500); color: #fff; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
-.sb-brand__name { font-weight: 700; font-size: 15px; color: var(--ink-900); }
+.sb-brand__name { font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: var(--ink-900); }
 .sb-brand__workspace { font-size: 12px; color: var(--ink-500); }
 
 .sb-nav { flex: 1; display: flex; flex-direction: column; gap: var(--space-4); overflow-y: auto; }
@@ -36,12 +36,14 @@
 .sb-nav__label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-300); padding: var(--space-2) var(--space-3) 4px; }
 .sb-nav-item {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: 10px 12px; border-radius: var(--radius-sm);
-  background: none; border: none; text-align: left; cursor: pointer;
+  padding: 10px 12px; border-radius: 0;
+  border-left: 2px solid transparent;
+  background: none; border-top: none; border-right: none; border-bottom: none; text-align: left; cursor: pointer;
   font-size: 14px; font-weight: 500; color: var(--ink-700);
+  margin-left: -1px;
 }
-.sb-nav-item:hover { background: var(--ink-50); }
-.sb-nav-item--active { background: var(--brand-50); color: var(--brand-700); font-weight: 600; }
+.sb-nav-item:hover { color: var(--ink-900); }
+.sb-nav-item--active { border-left-color: var(--brand-500); color: var(--ink-900); font-weight: 600; }
 .sb-nav-item__icon { width: 18px; text-align: center; color: inherit; opacity: 0.85; }
 
 .sb-plan {

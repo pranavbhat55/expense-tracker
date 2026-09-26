@@ -79,7 +79,7 @@ export function ExpenseTable({
               <span>{new Date(expense.date).toLocaleDateString()}</span>
               <span>{expense.category}</span>
               <span className="ex-table__note">{expense.note || "—"}</span>
-              <span className="ex-table__amount">{formatCurrency(Number(expense.amount))}</span>
+              <span className="ex-table__amount num">{formatCurrency(Number(expense.amount))}</span>
               <span className="ex-table__actions">
                 <button className="ex-table__action" onClick={() => onEditExpense(expense)} disabled={loading}>
                   Edit

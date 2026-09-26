@@ -1,3 +1,29 @@
+.db-ledger-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-6) 0 var(--space-5);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-5);
+}
+.db-ledger-hero__main { display: flex; flex-direction: column; gap: 6px; }
+.db-ledger-hero__label { font-size: 13px; color: var(--ink-500); }
+.db-ledger-hero__figure { font-size: 56px; font-weight: 600; line-height: 1; color: var(--ink-900); letter-spacing: -0.01em; }
+.db-ledger-hero__stats { display: flex; align-items: center; gap: var(--space-6); }
+.db-ledger-hero__stat { position: relative; display: flex; flex-direction: column; gap: 2px; padding-left: var(--space-6); }
+.db-ledger-hero__stat:first-child { padding-left: 0; }
+.db-ledger-hero__divider { position: absolute; left: 0; top: 2px; bottom: 2px; width: 1px; background: var(--border); }
+.db-ledger-hero__stat-label { font-size: 12px; color: var(--ink-500); }
+.db-ledger-hero__stat-value { font-size: 20px; font-weight: 600; color: var(--ink-900); }
+
+@media (max-width: 900px) {
+  .db-ledger-hero { flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+  .db-ledger-hero__figure { font-size: 40px; }
+  .db-ledger-hero__stats { gap: var(--space-4); }
+}
+
 .db-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

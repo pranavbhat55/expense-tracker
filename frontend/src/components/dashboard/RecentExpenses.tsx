@@ -29,7 +29,7 @@ export function RecentExpenses({ expenses }: { expenses: Expense[] }) {
                 <div className="db-recent-row__note">{e.note || "—"}</div>
               </div>
               <div className="db-recent-row__right">
-                <div className="db-recent-row__amount">{formatCurrency(Number(e.amount))}</div>
+                <div className="db-recent-row__amount num">{formatCurrency(Number(e.amount))}</div>
                 <div className="db-recent-row__date">{new Date(e.date).toLocaleDateString()}</div>
               </div>
             </div>
