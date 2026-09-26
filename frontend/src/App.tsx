@@ -1,13 +1,4 @@
-﻿import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-/* eslint-disable react-refresh/only-export-components, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+﻿/* eslint-disable react-refresh/only-export-components, react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 import {
   useCallback,
   useEffect,
@@ -70,6 +61,7 @@ import { RecentExpenses } from "./components/dashboard/RecentExpenses";
 import { ExpenseFilters } from "./components/expenses/ExpenseFilters";
 import { ExpenseTable } from "./components/expenses/ExpenseTable";
 import { ExpenseDrawer } from "./components/expenses/ExpenseDrawer";
+import { TimelineReportView } from "./components/timeline/TimelineReport";
 
 const CSV_COLUMNS = [
   "Date",
@@ -77,12 +69,6 @@ const CSV_COLUMNS = [
   "Note",
   "Amount",
 ];
-
-const chartAxisStyle = {
-  fill: "#7c756b",
-  fontSize: 12,
-  fontWeight: 600,
-};
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -92,12 +78,6 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function formatCompactCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
 
 function getTodayInputValue(): string {
   const today = new Date();
@@ -1615,183 +1595,20 @@ function App() {
         {auditTotalPages > 1 && <div className="audit-pagination"><button type="button" disabled={auditPage <= 1 || auditLoading} onClick={() => loadAuditLogs(auditPage - 1)}>Previous</button><span>Page {auditPage} of {auditTotalPages}</span><button type="button" disabled={auditPage >= auditTotalPages || auditLoading} onClick={() => loadAuditLogs(auditPage + 1)}>Next</button></div>}
       </section>
 
-      <section className="chart-card" style={{ display: view === "timeline" ? undefined : "none" }}>
-        <div className="chart-header">
-          <div>
-            <h2>Timeline Report</h2>
-            <p>
-              Track spending over your selected date range.
-            </p>
-          </div>
-        </div>
-
-        {!canUseTimeline && subscription && (
-          <p className="feature-lock">
-            Timeline reports are not included in your current plan. Upgrade to PRO to unlock this report.
-          </p>
-        )}
-
-        {timelineError && (
-          <p className="error">{timelineError}</p>
-        )}
-
-        <div className="timeline-controls">
-          <div className="timeline-field">
-            <label htmlFor="timeline-from">From</label>
-            <input
-              id="timeline-from"
-              type="date"
-              value={timelineFrom}
-              disabled={!canUseTimeline}
-              onChange={(event) =>
-                setTimelineFrom(event.target.value)
-              }
-            />
-          </div>
-
-          <div className="timeline-field">
-            <label htmlFor="timeline-to">To</label>
-            <input
-              id="timeline-to"
-              type="date"
-              value={timelineTo}
-              disabled={!canUseTimeline}
-              onChange={(event) =>
-                setTimelineTo(event.target.value)
-              }
-            />
-          </div>
-
-          <div className="timeline-field">
-            <label htmlFor="timeline-group">View</label>
-            <select
-              id="timeline-group"
-              value={timelineGroupBy}
-              disabled={!canUseTimeline}
-              onChange={(event) =>
-                setTimelineGroupBy(
-                  event.target.value as
-                  | "day"
-                  | "week"
-                  | "month",
-                )
-              }
-            >
-              <option value="day">Daily</option>
-              <option value="week">Weekly</option>
-              <option value="month">Monthly</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={loadTimelineReport}
-            disabled={timelineLoading || !canUseTimeline}
-          >
-            {timelineLoading
-              ? "Generating..."
-              : "Generate Report"}
-          </button>
-        </div>
-
-        {timelineReport && canUseTimeline && (
-          <>
-            <div className="summary-stats">
-              <div>
-                <strong>Total Spent</strong>
-                <p>
-                  ₹{timelineReport.total.toFixed(2)}
-                </p>
-                <small>Selected date range</small>
-              </div>
-
-              <div>
-                <strong>Transactions</strong>
-                <p>{timelineReport.count}</p>
-                <small>Expenses recorded</small>
-              </div>
-            </div>
-
-            {timelineReport.timeline.length > 0 ? (
-              <div className="chart-container">
-                <ResponsiveContainer
-                  width="100%"
-                  height={320}
-                >
-                  <BarChart
-                    data={timelineReport.timeline}
-                    margin={{
-                      top: 10,
-                      right: 20,
-                      left: 10,
-                      bottom: 10,
-                    }}
-                  >
-                    <defs>
-                      <linearGradient id="timelineBar" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4d8b70" />
-                        <stop offset="100%" stopColor="#2d6251" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      vertical={false}
-                      stroke="#e8e1d7"
-                      strokeDasharray="4 5"
-                    />
-
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={chartAxisStyle}
-                      minTickGap={28}
-                    />
-
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={chartAxisStyle}
-                      tickFormatter={formatCompactCurrency}
-                      width={56}
-                    />
-
-                    <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
-                      labelFormatter={(label) => `Period: ${label}`}
-                      cursor={{ fill: "rgba(78, 125, 103, 0.08)" }}
-                      contentStyle={{
-                        border: "1px solid #ded5c9",
-                        borderRadius: 12,
-                        background: "rgba(255, 253, 249, 0.97)",
-                        boxShadow: "0 12px 28px rgba(52, 47, 40, 0.12)",
-                      }}
-                    />
-
-                    <Bar
-                      dataKey="total"
-                      name="Spending"
-                      fill="url(#timelineBar)"
-                      barSize={28}
-                      activeBar={{ fill: "#c18a58" }}
-                      radius={[
-                        6,
-                        6,
-                        0,
-                        0,
-                      ]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="chart-empty">
-                <p>
-                  No expenses found for this date range.
-                </p>
-              </div>
-            )}
-          </>
-        )}
+      <section style={{ display: view === "timeline" ? undefined : "none" }}>
+        <TimelineReportView
+          canUseTimeline={canUseTimeline}
+          from={timelineFrom}
+          to={timelineTo}
+          groupBy={timelineGroupBy}
+          loading={timelineLoading}
+          error={timelineError}
+          report={timelineReport}
+          onFromChange={setTimelineFrom}
+          onToChange={setTimelineTo}
+          onGroupByChange={setTimelineGroupBy}
+          onGenerate={loadTimelineReport}
+        />
       </section>
 
 
