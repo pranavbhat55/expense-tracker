@@ -2,41 +2,6 @@
   box-sizing: border-box;
 }
 
-:root {
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
-  color: #17201d;
-  background: #f3f1eb;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-}
-
-html {
-  background: #f3f1eb;
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  color: #17201d;
-  background:
-    radial-gradient(circle at 90% -10%,
-      rgba(45, 107, 86, 0.1),
-      transparent 28%),
-    radial-gradient(circle at -5% 35%,
-      rgba(184, 151, 77, 0.07),
-      transparent 24%),
-    #f3f1eb;
-}
 
 button,
 input {
@@ -1254,14 +1219,6 @@ input[type="month"]:focus {
   --danger-soft: #fff2ed;
 }
 
-/* Softer, more premium page background */
-body {
-  background:
-    radial-gradient(circle at 8% 5%, rgba(47, 112, 88, 0.08), transparent 24%),
-    radial-gradient(circle at 94% 18%, rgba(184, 149, 77, 0.08), transparent 22%),
-    linear-gradient(180deg, #f5f3ed 0%, #f0eee7 100%);
-}
-
 /* Better vertical rhythm */
 .app {
   padding-top: 30px;
@@ -1636,48 +1593,6 @@ button:disabled {
    PASTEL BEIGE PREMIUM DASHBOARD
    Final visual layer — functionality untouched
    ========================================================= */
-
-:root {
-  --bg: #f2ede4;
-  --surface: #fffaf2;
-  --surface-2: #f8f1e7;
-  --surface-3: #eee5d8;
-
-  --ink: #2b2925;
-  --ink-soft: #625d55;
-  --muted: #8c857b;
-
-  --sage: #7d9b89;
-  --sage-dark: #587564;
-  --sage-soft: #e4eee7;
-
-  --peach: #d9a58f;
-  --peach-soft: #f5e3d9;
-
-  --lavender: #aaa4c5;
-  --lavender-soft: #ebe8f2;
-
-  --gold: #b99b62;
-  --gold-soft: #f4ecd9;
-
-  --rose: #c88779;
-  --rose-soft: #f7e5e0;
-
-  --line: #e2d9cd;
-}
-
-/* Overall atmosphere */
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  color: var(--ink);
-  background:
-    radial-gradient(circle at 8% 0%, rgba(217, 165, 143, .16), transparent 25%),
-    radial-gradient(circle at 92% 7%, rgba(170, 164, 197, .14), transparent 25%),
-    linear-gradient(180deg, #f5f0e8 0%, #eee7dc 100%);
-}
 
 /* Main container */
 .app {
