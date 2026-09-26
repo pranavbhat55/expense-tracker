@@ -62,6 +62,9 @@ import { ExpenseFilters } from "./components/expenses/ExpenseFilters";
 import { ExpenseTable } from "./components/expenses/ExpenseTable";
 import { ExpenseDrawer } from "./components/expenses/ExpenseDrawer";
 import { TimelineReportView } from "./components/timeline/TimelineReport";
+import { MembersSection } from "./components/workspace/MembersSection";
+import { ActivitySection } from "./components/workspace/ActivitySection";
+import { BillingSection } from "./components/billing/BillingSection";
 
 const CSV_COLUMNS = [
   "Date",
@@ -70,13 +73,6 @@ const CSV_COLUMNS = [
   "Amount",
 ];
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 
 function getTodayInputValue(): string {
@@ -88,23 +84,7 @@ function getTodayInputValue(): string {
   return `${year}-${month}-${day}`;
 }
 
-export function describeAuditLog(log: AuditLog): string {
-  const metadata = log.metadata ?? {};
-  const actor = log.user?.name ?? "A workspace member";
-  switch (log.action) {
-    case "MEMBER_JOINED": return `${actor} joined the workspace`;
-    case "ROLE_CHANGED": return `${actor} changed a member role: ${String(metadata.previousRole ?? "")} → ${String(metadata.newRole ?? "")}`;
-    case "MEMBER_REMOVED": return `${actor} removed ${String(metadata.memberEmail ?? "a member")}`;
-    case "EXPENSE_CREATED": return `${actor} created an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
-    case "EXPENSE_UPDATED": return `${actor} updated an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
-    case "EXPENSE_DELETED": return `${actor} deleted an expense: ${formatCurrency(Number(metadata.amount ?? 0))} · ${String(metadata.category ?? "")}`;
-    case "BUDGET_CREATED": return `${actor} created a budget for ${String(metadata.category ?? "")}`;
-    case "BUDGET_UPDATED": return `${actor} updated a budget for ${String(metadata.category ?? "")}`;
-    case "BUDGET_DELETED": return `${actor} deleted a budget for ${String(metadata.category ?? "")}`;
-    case "SUBSCRIPTION_PLAN_CHANGED": return `${actor} changed the subscription: ${String(metadata.previousPlan ?? "")} → ${String(metadata.newPlan ?? "")}`;
-    default: return `${actor} performed ${log.action.toLowerCase().replaceAll("_", " ")}`;
-  }
-}
+export { describeAuditLog } from "./components/workspace/auditUtils";
 
 export function escapeCsvValue(
   value: string,
@@ -1375,224 +1355,40 @@ function App() {
         <p className="error">{error}</p>
       )}
 
-      <section className="subscription-section" style={{ display: view === "billing" ? undefined : "none" }}>
-        <div className="subscription-header">
-          <div>
-            <span className="subscription-eyebrow">
-              ACCOUNT PLAN
-            </span>
-            <h2>Subscription & Licensing</h2>
-            <p>
-              Manage your organization's plan and license.
-            </p>
-          </div>
-
-          {subscription && (
-            <span
-              className={`subscription-status ${subscription.status.toLowerCase()
-                }`}
-            >
-              <span className="subscription-status-dot" />
-              {subscription.status}
-            </span>
-          )}
-        </div>
-
-        {subscriptionError && (
-          <p className="error">{subscriptionError}</p>
-        )}
-
-        <div className="subscription-current">
-          <div>
-            <span className="subscription-label">
-              CURRENT PLAN
-            </span>
-            <strong>
-              {subscription
-                ? subscription.plan
-                : "No active plan"}
-            </strong>
-          </div>
-
-          {subscription && (
-            <div className="subscription-expiry">
-              <span className="subscription-label">
-                LICENSE EXPIRES
-              </span>
-              <strong>
-                {new Date(
-                  subscription.expiresAt,
-                ).toLocaleDateString()}
-              </strong>
-            </div>
-          )}
-        </div>
-
-        {subscription?.entitlements && (
-          <div className="entitlement-summary">
-            <span>
-              Monthly expenses: {usage ?? 0}{quota === null ? " / unlimited" : ` / ${quota ?? "—"}`}
-            </span>
-            <span>
-              Features: {subscription.entitlements.features.budgets ? "Budgets" : "No budgets"} · {subscription.entitlements.features.timelineReports ? "Timeline reports" : "No timeline reports"} · {subscription.entitlements.features.csvExport ? "CSV export" : "No CSV export"}
-            </span>
-          </div>
-        )}
-
-        <div className="subscription-divider" />
-
-        <div className="subscription-section-heading">
-          <div>
-            <h3>Choose a plan</h3>
-            <p>{canManageSubscription ? "Change the plan for this organization. This is a demo plan-management flow; no payment is processed." : "Only the workspace owner can change or cancel this subscription."}</p>
-          </div>
-        </div>
-
-        <div className="subscription-plans">
-          {(["FREE", "PRO", "BUSINESS"] as const).map(
-            (plan) => {
-              const isSelected =
-                selectedPlan === plan;
-              const isCurrent =
-                subscription?.plan === plan;
-
-              return (
-                <button
-                  key={plan}
-                  type="button"
-                  className={`subscription-plan ${isSelected ? "selected" : ""
-                    }`}
-                  onClick={() =>
-                    setSelectedPlan(plan)
-                  }
-                  disabled={!canManageSubscription}
-                  aria-pressed={isSelected}
-                >
-                  <div className="subscription-plan-top">
-                    <div>
-                      <span className="subscription-plan-name">
-                        {plan}
-                      </span>
-                      {isCurrent && (
-                        <span className="subscription-current-badge">
-                          Current
-                        </span>
-                      )}
-                    </div>
-
-                    <span className="subscription-plan-check">
-                      {isSelected ? "✓" : ""}
-                    </span>
-                  </div>
-
-                  <span className="subscription-plan-period">
-                    {plan === "FREE"
-                      ? "12 month license"
-                      : "1 month license"}
-                  </span>
-                </button>
-              );
-            },
-          )}
-        </div>
-
-        <div className="subscription-action-row">
-          <button
-            type="button"
-            className="subscription-action"
-            onClick={handleSubscriptionChange}
-            disabled={
-              !canManageSubscription || subscriptionLoading ||
-              (subscription?.plan === selectedPlan &&
-                subscription.status === "ACTIVE")
-            }
-          >
-            {subscriptionLoading
-              ? "Updating..."
-              : subscription?.plan === selectedPlan &&
-                subscription.status === "ACTIVE"
-                ? "Current Plan"
-              : !canManageSubscription
-                ? "Owner access required"
-                : subscription
-                  ? `${selectedPlan === "FREE" ? "Downgrade" : "Change plan"} to ${selectedPlan}`
-                  : `Activate ${selectedPlan}`}
-          </button>
-        </div>
-
-        {subscription && canManageSubscription && (
-          <div className="subscription-license-card">
-            <div className="subscription-license-heading">
-              <div>
-                <span className="subscription-label">
-                  LICENSE INFORMATION
-                </span>
-                <h3>Organization license</h3>
-              </div>
-              <span className="subscription-license-badge">
-                Licensed
-              </span>
-            </div>
-
-            <div className="subscription-license-key">
-              <span>License Key</span>
-              <code>{subscription.licenseKey}</code>
-            </div>
-
-            <div className="subscription-license-meta">
-              <div>
-                <span>Plan</span>
-                <strong>{subscription.plan}</strong>
-              </div>
-
-              <div>
-                <span>Status</span>
-                <strong>{subscription.status}</strong>
-              </div>
-
-              <div>
-                <span>Start date</span>
-                <strong>
-                  {new Date(
-                    subscription.startsAt,
-                  ).toLocaleDateString()}
-                </strong>
-              </div>
-
-              <div>
-                <span>Expiry date</span>
-                <strong>
-                  {new Date(
-                    subscription.expiresAt,
-                  ).toLocaleDateString()}
-                </strong>
-              </div>
-            </div>
-          </div>
-        )}
+      <section style={{ display: view === "billing" ? undefined : "none" }}>
+        <BillingSection
+          subscription={subscription}
+          error={subscriptionError}
+          usage={usage ?? 0}
+          quota={quota ?? null}
+          selectedPlan={selectedPlan}
+          canManageSubscription={canManageSubscription}
+          subscriptionLoading={subscriptionLoading}
+          onSelectPlan={setSelectedPlan}
+          onChangePlan={handleSubscriptionChange}
+        />
       </section>
 
-      <section className="workspace-section" style={{ display: view === "members" ? undefined : "none" }}>
-        <div className="workspace-heading"><div><span className="subscription-eyebrow">WORKSPACE</span><h2>Workspace Members</h2><p>People with access to this organization.</p></div></div>
-        {membersError && <p className="error">{membersError}</p>}
-        {membersLoading ? <p className="workspace-state">Loading members…</p> : members.length === 0 ? <p className="workspace-state">No workspace members found.</p> : (
-          <div className="members-table" role="table" aria-label="Workspace members">
-            <div className="members-row members-header" role="row"><span>Name</span><span>Email</span><span>Role</span><span>Joined</span><span>Actions</span></div>
-            {members.map((member) => <div className="members-row" role="row" key={member.id}>
-              <span>{member.name}</span><span>{member.email}</span>
-              <span>{canManageSubscription ? <select aria-label={`Role for ${member.name}`} value={member.role} onChange={(event) => handleRoleChange(member, event.target.value as WorkspaceRole)}><option value="OWNER">OWNER</option><option value="ADMIN">ADMIN</option><option value="MEMBER">MEMBER</option></select> : member.role}</span>
-              <span>{new Date(member.createdAt).toLocaleDateString()}</span>
-              <span>{canManageSubscription ? <button className="member-remove" type="button" onClick={() => handleRemoveMember(member)}>Remove</button> : "—"}</span>
-            </div>)}
-          </div>
-        )}
+      <section style={{ display: view === "members" ? undefined : "none" }}>
+        <MembersSection
+          members={members}
+          loading={membersLoading}
+          error={membersError}
+          canManage={canManageSubscription}
+          onRoleChange={handleRoleChange}
+          onRemove={handleRemoveMember}
+        />
       </section>
 
-      <section className="workspace-section activity-section" style={{ display: view === "activity" ? undefined : "none" }}>
-        <div className="workspace-heading"><div><span className="subscription-eyebrow">ACTIVITY</span><h2>Workspace Activity</h2><p>A tenant-scoped record of workspace changes.</p></div></div>
-        {auditError && <p className="error">{auditError}</p>}
-        {auditLoading ? <p className="workspace-state">Loading activity…</p> : auditLogs.length === 0 ? <p className="workspace-state">No activity has been recorded yet.</p> : <div className="audit-list">{auditLogs.map((log) => <article className="audit-item" key={log.id}><time>{new Date(log.createdAt).toLocaleString()}</time><p>{describeAuditLog(log)}</p></article>)}</div>}
-        {auditTotalPages > 1 && <div className="audit-pagination"><button type="button" disabled={auditPage <= 1 || auditLoading} onClick={() => loadAuditLogs(auditPage - 1)}>Previous</button><span>Page {auditPage} of {auditTotalPages}</span><button type="button" disabled={auditPage >= auditTotalPages || auditLoading} onClick={() => loadAuditLogs(auditPage + 1)}>Next</button></div>}
+      <section style={{ display: view === "activity" ? undefined : "none" }}>
+        <ActivitySection
+          logs={auditLogs}
+          loading={auditLoading}
+          error={auditError}
+          page={auditPage}
+          totalPages={auditTotalPages}
+          onPageChange={loadAuditLogs}
+        />
       </section>
 
       <section style={{ display: view === "timeline" ? undefined : "none" }}>
