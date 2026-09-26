@@ -52,13 +52,14 @@ export async function authenticate(
         // claims from retaining owner permissions.
         const member = await prisma.user.findFirst({
             where: { id: payload.userId, tenantId: payload.tenantId },
-            select: { role: true },
+            select: { role: true, isSuperAdmin: true },
         });
         if (!member) throw new AppError("Workspace membership is no longer active", 401);
 
         req.userId = payload.userId;
         req.tenantId = payload.tenantId;
         req.role = member.role;
+        req.isSuperAdmin = member.isSuperAdmin;
 
         next();
     } catch (error) {

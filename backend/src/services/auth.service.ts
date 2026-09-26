@@ -47,12 +47,12 @@ export async function registerUser(data: { name: string; email: string; password
     if (data.workspaceSlug && result.user.role === "MEMBER") {
         await createAuditLog({ tenantId: result.tenant.id, userId: result.user.id, action: "MEMBER_JOINED", entityType: "USER", entityId: result.user.id, metadata: { memberEmail: result.user.email, role: result.user.role } });
     }
-    return { id: result.user.id, name: result.user.name, email: result.user.email, tenantId: result.tenant.id, tenantName: result.tenant.name, role: result.user.role, createdAt: result.user.createdAt };
+    return { id: result.user.id, name: result.user.name, email: result.user.email, tenantId: result.tenant.id, tenantName: result.tenant.name, role: result.user.role, isSuperAdmin: result.user.isSuperAdmin, createdAt: result.user.createdAt };
 }
 
 export async function loginUser(data: { email: string; password: string }) {
     const user = await prisma.user.findUnique({ where: { email: data.email }, include: { tenant: true } });
     if (!user || !(await bcrypt.compare(data.password, user.password))) throw new AppError("Invalid email or password", 401);
     const token = jwt.sign({ userId: user.id, email: user.email, tenantId: user.tenantId, role: user.role }, jwtSecret, { expiresIn: "1h" });
-    return { token, user: { id: user.id, name: user.name, email: user.email, tenantId: user.tenantId, tenantName: user.tenant.name, role: user.role } };
+    return { token, user: { id: user.id, name: user.name, email: user.email, tenantId: user.tenantId, tenantName: user.tenant.name, role: user.role, isSuperAdmin: user.isSuperAdmin } };
 }

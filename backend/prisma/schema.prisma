@@ -46,6 +46,7 @@ model User {
   email     String   @unique
   password  String
   role      UserRole @default(MEMBER)
+  isSuperAdmin Boolean @default(false)
 
   tenantId  Int
   tenant    Tenant @relation(fields: [tenantId], references: [id])
