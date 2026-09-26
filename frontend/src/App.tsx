@@ -61,6 +61,8 @@ import { RecentExpenses } from "./components/dashboard/RecentExpenses";
 import { ExpenseFilters } from "./components/expenses/ExpenseFilters";
 import { ExpenseTable } from "./components/expenses/ExpenseTable";
 import { ExpenseDrawer } from "./components/expenses/ExpenseDrawer";
+import { BudgetCards } from "./components/budgets/BudgetCards";
+import { BudgetForm } from "./components/budgets/BudgetForm";
 import { TimelineReportView } from "./components/timeline/TimelineReport";
 import { MembersSection } from "./components/workspace/MembersSection";
 import { ActivitySection } from "./components/workspace/ActivitySection";
@@ -136,6 +138,7 @@ function App() {
   const [view, setView] = useState<NavKey>("dashboard");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [expenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
+  const [budgetDrawerOpen, setBudgetDrawerOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] =
     useState(true);
@@ -1017,319 +1020,114 @@ function App() {
       </section>
 
 
-      <section className="budget-section" style={{ display: view === "budgets" ? undefined : "none" }}>
-        <div className="budget-header">
-          <div>
-            <h2>Monthly Budgets</h2>
-            <p>
-              Set spending limits for
-              each category.
-            </p>
-          </div>
+
+      <BudgetForm
+        open={budgetDrawerOpen}
+        onClose={() => {
+          setBudgetDrawerOpen(false);
+          setEditingBudgetId(null);
+          setBudgetAmount("");
+          setBudgetCategory("");
+          setBudgetMonth("");
+        }}
+        isEditing={editingBudgetId !== null}
+        amount={budgetAmount}
+        category={budgetCategory}
+        month={budgetMonth || filterMonth}
+        loading={budgetLoading}
+        onAmountChange={setBudgetAmount}
+        onCategoryChange={setBudgetCategory}
+        onMonthChange={setBudgetMonth}
+        onSubmit={async (event) => {
+          event.preventDefault();
+
+          if (!canUseBudgets) {
+            setError("Budgets are not included in your current plan. Upgrade to PRO to use this feature.");
+            return;
+          }
+
+          const budgetValue = Number(budgetAmount);
+          const month = budgetMonth || filterMonth;
+
+          if (!budgetValue || budgetValue <= 0 || !budgetCategory || !month) {
+            setError("Budget amount, category, and month are required.");
+            return;
+          }
+
+          setBudgetLoading(true);
+          setError("");
+
+          try {
+            if (editingBudgetId !== null) {
+              await updateBudget(editingBudgetId, budgetValue, budgetCategory, month);
+            } else {
+              await createBudget(budgetValue, budgetCategory, month);
+            }
+            setBudgetAmount("");
+            setBudgetCategory("");
+            setBudgetMonth("");
+            setEditingBudgetId(null);
+            setBudgetDrawerOpen(false);
+            await loadBudgets();
+          } catch (error) {
+            console.error(error);
+            setError("Failed to save budget");
+          } finally {
+            setBudgetLoading(false);
+          }
+        }}
+      />
+
+      <section style={{ display: view === "budgets" ? undefined : "none" }}>
+        <div className="db-card-header">
+          <h2>Budgets</h2>
+          <p>Set spending limits for each category.</p>
         </div>
 
         {!canUseBudgets && subscription && (
-          <p className="feature-lock">
-            Budgets are not included in your current plan. Upgrade to PRO to manage category budgets.
-          </p>
+          <p className="feature-lock">Budgets are not included in your current plan. Upgrade to PRO to manage category budgets.</p>
         )}
 
-        <form
-          className="budget-form"
-          onSubmit={async (event) => {
-            event.preventDefault();
-
-            if (!canUseBudgets) {
-              setError("Budgets are not included in your current plan. Upgrade to PRO to use this feature.");
-              return;
-            }
-
-            const budgetValue =
-              Number(budgetAmount);
-
-            const month =
-              budgetMonth || filterMonth;
-
-            if (
-              !budgetValue ||
-              budgetValue <= 0 ||
-              !budgetCategory ||
-              !month
-            ) {
-              setError(
-                "Budget amount, category, and month are required.",
-              );
-              return;
-            }
-
-            setBudgetLoading(true);
-            setError("");
-
-            try {
-              if (
-                editingBudgetId !== null
-              ) {
-                await updateBudget(
-                  editingBudgetId,
-                  budgetValue,
-                  budgetCategory,
-                  month,
-                );
-              } else {
-                await createBudget(
-                  budgetValue,
-                  budgetCategory,
-                  month,
-                );
-              }
-
+        <div className="bg-toolbar">
+          <button
+            type="button"
+            className="ui-btn ui-btn--primary"
+            disabled={!canUseBudgets}
+            onClick={() => {
+              setEditingBudgetId(null);
               setBudgetAmount("");
               setBudgetCategory("");
               setBudgetMonth("");
-              setEditingBudgetId(null);
+              setBudgetDrawerOpen(true);
+            }}
+          >
+            + Set budget
+          </button>
+        </div>
 
+        <BudgetCards
+          budgets={budgets}
+          summary={summary}
+          onAdd={() => setBudgetDrawerOpen(true)}
+          onEdit={(budget) => {
+            setEditingBudgetId(budget.id);
+            setBudgetAmount(String(Number(budget.amount)));
+            setBudgetCategory(budget.category);
+            setBudgetMonth(budget.month);
+            setBudgetDrawerOpen(true);
+          }}
+          onDelete={async (id) => {
+            const confirmed = window.confirm("Delete this budget?");
+            if (!confirmed) return;
+            try {
+              await deleteBudget(id);
               await loadBudgets();
             } catch (error) {
               console.error(error);
-
-              setError(
-                "Failed to save budget",
-              );
-            } finally {
-              setBudgetLoading(false);
+              setError("Failed to delete budget");
             }
           }}
-        >
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="Monthly budget"
-            value={budgetAmount}
-            disabled={!canUseBudgets}
-            onChange={(event) =>
-              setBudgetAmount(
-                event.target.value,
-              )
-            }
-          />
-
-          <input
-            type="text"
-            placeholder="Category"
-            value={budgetCategory}
-            disabled={!canUseBudgets}
-            onChange={(event) =>
-              setBudgetCategory(
-                event.target.value,
-              )
-            }
-          />
-
-          <input
-            type="month"
-            value={
-              budgetMonth || filterMonth
-            }
-            disabled={!canUseBudgets}
-            onChange={(event) =>
-              setBudgetMonth(
-                event.target.value,
-              )
-            }
-          />
-
-          <button
-            type="submit"
-            disabled={budgetLoading || !canUseBudgets}
-          >
-            {budgetLoading
-              ? "Saving..."
-              : editingBudgetId !== null
-                ? "Update Budget"
-                : "Set Budget"}
-          </button>
-
-          {editingBudgetId !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingBudgetId(null);
-                setBudgetAmount("");
-                setBudgetCategory("");
-                setBudgetMonth("");
-              }}
-              disabled={budgetLoading}
-            >
-              Cancel
-            </button>
-          )}
-        </form>
-
-        <div className="budget-list">
-          {budgets.length === 0 ? (
-            <div className="budget-empty">
-              No budgets set for this
-              month.
-            </div>
-          ) : (
-            budgets.map((budget) => {
-              const categorySpending =
-                summary?.byCategory.find(
-                  (item) =>
-                    item.category ===
-                    budget.category,
-                )?.total ?? 0;
-
-              const budgetValue =
-                Number(budget.amount);
-
-              const isOverBudget =
-                categorySpending >
-                budgetValue;
-
-              const percentage =
-                budgetValue > 0
-                  ? Math.min(
-                    (categorySpending /
-                      budgetValue) *
-                    100,
-                    100,
-                  )
-                  : 0;
-
-              return (
-                <div
-                  className={`budget-card ${isOverBudget
-                    ? "over-budget"
-                    : ""
-                    }`}
-                  key={budget.id}
-                >
-                  <div className="budget-card-header">
-                    <div>
-                      <h3>
-                        {budget.category}
-                      </h3>
-
-                      {isOverBudget && (
-                        <span className="budget-warning">
-                          Over budget
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="budget-actions">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingBudgetId(
-                            budget.id,
-                          );
-
-                          setBudgetAmount(
-                            String(
-                              budgetValue,
-                            ),
-                          );
-
-                          setBudgetCategory(
-                            budget.category,
-                          );
-
-                          setBudgetMonth(
-                            budget.month,
-                          );
-                        }}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const confirmed =
-                            window.confirm(
-                              "Delete this budget?",
-                            );
-
-                          if (!confirmed) {
-                            return;
-                          }
-
-                          try {
-                            await deleteBudget(
-                              budget.id,
-                            );
-
-                            await loadBudgets();
-                          } catch (error) {
-                            console.error(
-                              error,
-                            );
-
-                            setError(
-                              "Failed to delete budget",
-                            );
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="budget-values">
-                    <span>
-                      Spent: ₹
-                      {categorySpending.toFixed(
-                        2,
-                      )}
-                    </span>
-
-                    <span>
-                      Budget: ₹
-                      {budgetValue.toFixed(
-                        2,
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="budget-progress">
-                    <div
-                      className="budget-progress-bar"
-                      style={{
-                        width: `${percentage}%`,
-                      }}
-                    />
-                  </div>
-
-                  <p
-                    className={
-                      isOverBudget
-                        ? "budget-over-text"
-                        : "budget-remaining"
-                    }
-                  >
-                    {isOverBudget
-                      ? `₹${(
-                        categorySpending -
-                        budgetValue
-                      ).toFixed(
-                        2,
-                      )} over budget`
-                      : `₹${(
-                        budgetValue -
-                        categorySpending
-                      ).toFixed(
-                        2,
-                      )} remaining`}
-                  </p>
-                </div>
-              );
-            })
-          )}
-        </div>
+        />
       </section>
 
       {view === "dashboard" && summary && (
