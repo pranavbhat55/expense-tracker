@@ -65,6 +65,7 @@ import { TimelineReportView } from "./components/timeline/TimelineReport";
 import { MembersSection } from "./components/workspace/MembersSection";
 import { ActivitySection } from "./components/workspace/ActivitySection";
 import { BillingSection } from "./components/billing/BillingSection";
+import { PlatformAdminSection } from "./components/admin/PlatformAdminSection";
 
 const CSV_COLUMNS = [
   "Date",
@@ -913,6 +914,7 @@ function App() {
   }
 
   const canManageSubscription = subscription?.role === "OWNER";
+  const canViewAdmin = subscription?.isSuperAdmin === true;
   const canUseBudgets = subscription?.entitlements?.features.budgets ?? false;
   const canUseTimeline = subscription?.entitlements?.features.timelineReports ?? false;
   const canExportCsv = subscription?.entitlements?.features.csvExport ?? false;
@@ -927,6 +929,7 @@ function App() {
     members: "Workspace Members",
     activity: "Workspace Activity",
     billing: "Billing",
+    admin: "Platform Admin",
   };
 
   return (
@@ -947,6 +950,7 @@ function App() {
               workspaceName={workspaceSlug || "Your workspace"}
               canViewMembers={canManageSubscription || members.length > 0}
               canViewBilling={Boolean(subscription)}
+              canViewAdmin={canViewAdmin}
               plan={subscription?.plan ?? "FREE"}
             />
           </div>
@@ -958,6 +962,7 @@ function App() {
         workspaceName={workspaceSlug || "Your workspace"}
         canViewMembers={canManageSubscription || members.length > 0}
         canViewBilling={Boolean(subscription)}
+        canViewAdmin={canViewAdmin}
         plan={subscription?.plan ?? "FREE"}
       />
       <main className="app-shell__main">
@@ -1390,6 +1395,12 @@ function App() {
           onPageChange={loadAuditLogs}
         />
       </section>
+
+      {canViewAdmin && (
+        <section style={{ display: view === "admin" ? undefined : "none" }}>
+          <PlatformAdminSection />
+        </section>
+      )}
 
       <section style={{ display: view === "timeline" ? undefined : "none" }}>
         <TimelineReportView

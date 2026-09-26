@@ -19,6 +19,7 @@ export interface Subscription {
   createdAt: string;
   updatedAt: string;
   role?: WorkspaceRole;
+  isSuperAdmin?: boolean;
   entitlements?: Entitlements;
 }
 
@@ -49,6 +50,7 @@ async function subscriptionRequest(url: string, options: RequestInit = {}): Prom
     return {
       ...data.subscription,
       role: data.role,
+      isSuperAdmin: data.isSuperAdmin,
       entitlements: data.entitlements,
     };
   }

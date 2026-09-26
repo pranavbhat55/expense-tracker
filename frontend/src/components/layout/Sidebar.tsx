@@ -7,7 +7,8 @@ export type NavKey =
   | "timeline"
   | "members"
   | "activity"
-  | "billing";
+  | "billing"
+  | "admin";
 
 interface NavItem {
   key: NavKey;
@@ -33,6 +34,7 @@ export function Sidebar({
   workspaceName,
   canViewMembers,
   canViewBilling,
+  canViewAdmin,
   plan,
 }: {
   active: NavKey;
@@ -40,6 +42,7 @@ export function Sidebar({
   workspaceName: string;
   canViewMembers: boolean;
   canViewBilling: boolean;
+  canViewAdmin: boolean;
   plan: string;
 }) {
   const renderItem = (item: NavItem) => (
@@ -77,6 +80,13 @@ export function Sidebar({
           <div className="sb-nav__group">
             <div className="sb-nav__label">Account</div>
             {renderItem({ key: "billing", label: "Billing", icon: "◈" })}
+          </div>
+        )}
+
+        {canViewAdmin && (
+          <div className="sb-nav__group">
+            <div className="sb-nav__label">Platform</div>
+            {renderItem({ key: "admin", label: "Admin", icon: "⬢" })}
           </div>
         )}
       </nav>
