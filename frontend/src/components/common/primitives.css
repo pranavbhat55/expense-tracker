@@ -106,3 +106,18 @@
   color: var(--ink-500);
 }
 .ui-modal__body { padding: var(--space-5); }
+
+/* ---- interaction polish ---- */
+:where(button, input, select, textarea, a):focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+.ui-btn { transition: background .15s ease, border-color .15s ease, opacity .15s ease, transform .08s ease, box-shadow .15s ease; }
+.ui-btn:active:not(:disabled) { transform: translateY(1px); }
+.ui-btn--primary:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(169, 118, 15, 0.28); }
+
+.ui-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-50); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.ui-seg__btn { padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-500); background: transparent; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+.ui-seg__btn:hover { color: var(--ink-900); }
+.ui-seg__btn--on { background: var(--surface); color: var(--ink-900); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+
+.ui-skeletons { display: flex; flex-direction: column; gap: 14px; padding: var(--space-5); }
+.ui-skeleton { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--ink-100) 25%, var(--ink-50) 45%, var(--ink-100) 65%); background-size: 200% 100%; animation: ui-shimmer 1.3s ease-in-out infinite; }
+@keyframes ui-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }

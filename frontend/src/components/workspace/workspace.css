@@ -60,3 +60,5 @@
 .ws-invite__toggle { display: flex; gap: var(--space-3); align-items: flex-start; padding-top: var(--space-4); border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-700); cursor: pointer; }
 .ws-invite__toggle strong { display: block; color: var(--ink-900); }
 .ws-invite__toggle input { margin-top: 3px; accent-color: var(--brand-500); }
+
+.ws-row:not(.ws-row--head):hover { background: var(--ink-50); }

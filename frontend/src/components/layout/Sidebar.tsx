@@ -36,6 +36,7 @@ export function Sidebar({
   canViewBilling,
   canViewAdmin,
   plan,
+  seats,
 }: {
   active: NavKey;
   onNavigate: (key: NavKey) => void;
@@ -44,6 +45,7 @@ export function Sidebar({
   canViewBilling: boolean;
   canViewAdmin: boolean;
   plan: string;
+  seats?: string;
 }) {
   const renderItem = (item: NavItem) => (
     <button
@@ -93,7 +95,8 @@ export function Sidebar({
 
       <div className="sb-plan">
         <span className="sb-plan__dot" />
-        {plan} plan
+        <span>{plan} plan</span>
+        {seats && <span className="sb-plan__seats">{seats}</span>}
       </div>
     </aside>
   );

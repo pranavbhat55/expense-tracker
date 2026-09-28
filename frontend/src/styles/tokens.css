@@ -63,6 +63,11 @@
     --surface: #1e1f21;
     --canvas: #17181a;
     --border: #333330;
+    --brand-50: #2a2213;
+    --brand-100: #3a2e17;
+    --success-100: #14302a;
+    --warning-100: #33280f;
+    --danger-100: #35201c;
   }
 }
 

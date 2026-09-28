@@ -45,9 +45,10 @@ export function EmptyState({ title, description, action }: { title: string; desc
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="ui-loading">
-      <span className="ui-spinner" aria-hidden />
-      <span>{label}</span>
+    <div className="ui-skeletons" role="status" aria-busy="true" aria-label={label}>
+      {[92, 78, 86, 64].map((w, i) => (
+        <span key={i} className="ui-skeleton" style={{ width: `${w}%` }} />
+      ))}
     </div>
   );
 }

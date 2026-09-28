@@ -1,13 +1,6 @@
 import type { ExpenseSummary } from "../../types/expense";
+import { formatCurrency } from "../../utils/format";
 import "./dashboard.css";
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export function StatCards({ summary, periodLabel }: { summary: ExpenseSummary; periodLabel: string }) {
   const supporting = [

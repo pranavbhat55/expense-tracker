@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { Card, EmptyState } from "../common/primitives";
 import type { ExpenseSummary } from "../../types/expense";
+import { formatCompactCurrency } from "../../utils/format";
 import "./dashboard.css";
 
 function formatCurrency(value: number): string {
@@ -16,15 +17,6 @@ function formatCurrency(value: number): string {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCompactCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-    style: "currency",
-    currency: "INR",
   }).format(value);
 }
 
@@ -49,7 +41,7 @@ export function SpendingChart({ summary }: { summary: ExpenseSummary | null }) {
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 5" />
-            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={axisStyle} interval={0} />
+            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={axisStyle} interval={0} tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)} />
             <YAxis axisLine={false} tickLine={false} tick={axisStyle} tickFormatter={formatCompactCurrency} width={56} />
             <Tooltip
               formatter={(value) => formatCurrency(Number(value))}

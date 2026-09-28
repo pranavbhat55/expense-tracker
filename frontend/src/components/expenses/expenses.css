@@ -77,3 +77,12 @@
   .ex-table__row { grid-template-columns: 80px 1fr 90px 80px; }
   .ex-table__row span:nth-child(3) { display: none; }
 }
+
+.ex-table--team .ex-table__row { grid-template-columns: 100px 150px 140px 1fr 120px; }
+.ex-table__who { font-weight: 600; color: var(--ink-900); }
+.ex-table__row:not(.ex-table__row--head):hover { background: var(--ink-50); }
+@media (max-width: 720px) {
+  .ex-table--team .ex-table__row { grid-template-columns: 76px 1fr 1fr 84px; }
+  .ex-table--team .ex-table__row span:nth-child(3) { display: block; }
+  .ex-table--team .ex-table__row span:nth-child(4) { display: none; }
+}

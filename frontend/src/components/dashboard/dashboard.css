@@ -38,7 +38,6 @@
 .db-card-header h3 { margin: 0 0 2px; font-size: 15px; color: var(--ink-900); }
 .db-card-header p { margin: 0; font-size: 12px; color: var(--ink-500); }
 
-.db-chart-card { grid-column: span 2; }
 
 .db-dashboard-grid {
   display: grid;
@@ -73,5 +72,13 @@
 @media (max-width: 900px) {
   .db-stat-grid { grid-template-columns: repeat(2, 1fr); }
   .db-dashboard-grid, .db-dashboard-grid--secondary { grid-template-columns: 1fr; }
-  .db-chart-card { grid-column: span 1; }
+}
+
+.db-scope { display: flex; justify-content: flex-end; padding-top: var(--space-4); }
+.db-scope + .db-ledger-hero { padding-top: var(--space-4); }
+.db-dashboard-grid--secondary > :only-child { grid-column: 1 / -1; }
+
+/* Six long category names cannot share a phone-width axis; the ranked list below carries the labels. */
+@media (max-width: 600px) {
+  .db-chart-card .recharts-xAxis .recharts-cartesian-axis-tick-value { display: none; }
 }

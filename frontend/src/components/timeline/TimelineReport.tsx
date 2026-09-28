@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { Badge, Button, Card, EmptyState } from "../common/primitives";
 import type { TimelineReport as TimelineReportData } from "../../types/report";
+import { formatCompactCurrency } from "../../utils/format";
 import "./timeline.css";
 
 function formatCurrency(value: number): string {
@@ -16,15 +17,6 @@ function formatCurrency(value: number): string {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCompactCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-    style: "currency",
-    currency: "INR",
   }).format(value);
 }
 

@@ -728,3 +728,46 @@ The branch has been pushed to the remote repository and is ready for pull reques
 Author
 
 Pranav
+
+## Organization model (multi-tenant SaaS)
+
+Every sign-up creates its own **workspace**; data never crosses workspaces. An owner can then hand seats out
+to employees:
+
+| Concept | Behavior |
+| --- | --- |
+| Individuals | Sign up and get a private workspace (free trial). |
+| Invitations | Owners/admins invite by email + role. One-time link, valid 7 days, bound to that email/role/workspace. Only a SHA-256 hash is stored. Owners may invite admins; admins may only invite members. |
+| Seats | Active members **plus pending invitations** count against the plan (`FREE` 1, `PRO` 25, `BUSINESS` unlimited - see `backend/src/services/entitlement.service.ts`). |
+| Invite-only | New workspaces are invite-only; knowing a slug does not grant a seat. Owners can relax this in Members. |
+| Data isolation | Employees see only their own expenses. Owners/admins can switch to **Whole team** (`?scope=team`, read-only). Members get `403`. |
+| Offboarding | "Deactivate" revokes access immediately (sessions die, login refused) and frees the seat. Expense history is kept - it is the company's financial record. |
+| Platform admin | `User.isSuperAdmin` (set directly in the database) unlocks the cross-tenant `/admin` API. |
+
+### Running it
+
+```bash
+# backend
+cd backend
+cp .env.example .env        # set DATABASE_URL and JWT_SECRET
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run dev                 # http://localhost:3000
+
+# frontend (second terminal)
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173
+```
+
+Invitation emails are optional: set `SMTP_URL` (and `EMAIL_FROM`, `APP_URL`) in `backend/.env` to send them;
+otherwise the Members page shows a copyable link. Grant platform admin with
+`UPDATE "User" SET "isSuperAdmin" = true WHERE email = 'you@example.com';`
+
+### Tests
+
+```bash
+cd backend && npx vitest --run    # needs DATABASE_URL pointing at a migrated database
+cd frontend && npx vitest --run
+```

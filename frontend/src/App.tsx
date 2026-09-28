@@ -73,6 +73,7 @@ import { BudgetCards } from "./components/budgets/BudgetCards";
 import { BudgetForm } from "./components/budgets/BudgetForm";
 import { TimelineReportView } from "./components/timeline/TimelineReport";
 import { MembersSection } from "./components/workspace/MembersSection";
+import { ScopeToggle } from "./components/common/ScopeToggle";
 import { InvitePanel } from "./components/workspace/InvitePanel";
 import { AuthScreen, type InviteState } from "./components/auth/AuthScreen";
 import { ActivitySection } from "./components/workspace/ActivitySection";
@@ -148,6 +149,11 @@ function App() {
   const [view, setView] = useState<NavKey>("dashboard");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [expenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
+  // Owners/admins can switch between their own spending and the whole team's; members never see the toggle.
+  const [expenseScope, setExpenseScope] = useState<"mine" | "team">("mine");
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>(() => {
+    try { return JSON.parse(localStorage.getItem("user") ?? "null"); } catch { return null; }
+  });
   const [budgetDrawerOpen, setBudgetDrawerOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] =
@@ -282,6 +288,7 @@ function App() {
       const response =
         await getExpenseSummary(
           filterMonth || undefined,
+          expenseScope,
         );
 
       setSummary(response);
@@ -395,6 +402,7 @@ function App() {
         filterCategory || undefined,
         pageToLoad,
         10,
+        expenseScope,
       );
 
       if (pageToLoad === 1) {
@@ -491,7 +499,7 @@ function App() {
     loadSubscription();
     loadMembers();
     loadAuditLogs();
-  }, [filterMonth, filterCategory]);
+  }, [filterMonth, filterCategory, expenseScope]);
 
   async function handleLogin(
     event: FormEvent<HTMLFormElement>,
@@ -511,6 +519,9 @@ function App() {
         "token",
         response.token,
       );
+      const who = { name: response.user.name, email: response.user.email, role: response.user.role };
+      localStorage.setItem("user", JSON.stringify(who));
+      setCurrentUser(who);
 
       setCheckingAuth(false);
 
@@ -554,6 +565,9 @@ function App() {
         "token",
         response.token,
       );
+      const who = { name: response.user.name, email: response.user.email, role: response.user.role };
+      localStorage.setItem("user", JSON.stringify(who));
+      setCurrentUser(who);
 
       setCheckingAuth(false);
 
@@ -741,6 +755,9 @@ function App() {
 
   function handleLogout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setCurrentUser(null);
+    setExpenseScope("mine");
 
     setExpenses([]);
     setSummary(null);
@@ -913,6 +930,7 @@ function App() {
               canViewBilling={Boolean(subscription)}
               canViewAdmin={canViewAdmin}
               plan={subscription?.plan ?? "FREE"}
+        seats={workspaceSettings ? `${workspaceSettings.seats.used}${workspaceSettings.seats.limit === null ? "" : ` / ${workspaceSettings.seats.limit}`} seats` : undefined}
             />
           </div>
         </div>
@@ -925,11 +943,14 @@ function App() {
         canViewBilling={Boolean(subscription)}
         canViewAdmin={canViewAdmin}
         plan={subscription?.plan ?? "FREE"}
+        seats={workspaceSettings ? `${workspaceSettings.seats.used}${workspaceSettings.seats.limit === null ? "" : ` / ${workspaceSettings.seats.limit}`} seats` : undefined}
       />
       <main className="app-shell__main">
         <TopBar
           title={viewTitles[view]}
-          userEmail={email}
+          userName={currentUser?.name ?? ""}
+          userEmail={currentUser?.email ?? email}
+          role={subscription?.role ?? currentUser?.role}
           onLogout={handleLogout}
           onMenuClick={() => setMobileNavOpen(true)}
         />
@@ -964,7 +985,7 @@ function App() {
         }}
       />
 
-      <section className="filters" style={{ display: view === "expenses" ? undefined : "none" }}>
+      <section style={{ display: view === "expenses" ? undefined : "none" }}>
         <ExpenseFilters
           filterMonth={filterMonth}
           filterCategory={filterCategory}
@@ -1090,15 +1111,18 @@ function App() {
 
       {view === "dashboard" && summary && (
         <div className="db-dashboard-view">
+          {canInvite && (
+            <div className="db-scope"><ScopeToggle value={expenseScope} onChange={setExpenseScope} /></div>
+          )}
           <StatCards
             summary={summary}
             periodLabel={
-              filterMonth
+              (expenseScope === "team" ? "Whole team · " : "") + (filterMonth
                 ? new Date(`${filterMonth}-01T00:00:00`).toLocaleDateString("en-US", {
                   month: "long",
                   year: "numeric",
                 })
-                : "All recorded expenses"
+                : "All recorded expenses")
             }
           />
           <div className="db-dashboard-grid">
@@ -1106,7 +1130,7 @@ function App() {
             <CategoryBreakdown summary={summary} />
           </div>
           <div className="db-dashboard-grid--secondary">
-            <BudgetHealth budgets={budgets} summary={summary} />
+            {expenseScope === "mine" && <BudgetHealth budgets={budgets} summary={summary} />}
             <RecentExpenses expenses={expenses} />
           </div>
         </div>
@@ -1187,7 +1211,7 @@ function App() {
 
 
 
-      <section className="expense-list" style={{ display: view === "expenses" ? undefined : "none" }}>
+      <section style={{ display: view === "expenses" ? undefined : "none" }}>
         <ExpenseTable
           expenses={expenses}
           loading={loading}
@@ -1205,6 +1229,9 @@ function App() {
           onDeleteExpense={handleDeleteExpense}
           onExportCsv={handleExportCsv}
           lastExpenseRef={lastExpenseRef}
+          scope={expenseScope}
+          canViewTeam={canInvite}
+          onScopeChange={setExpenseScope}
         />
       </section>
         </div>
