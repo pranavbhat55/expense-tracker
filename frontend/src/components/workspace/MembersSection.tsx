@@ -28,7 +28,7 @@ export function MembersSection({
       <div className="ws-card__header">
         <div>
           <h2>Workspace members</h2>
-          <p>People with access to this organization.</p>
+          <p>People with active access to this organization.</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function MembersSection({
               <span className="ws-actions">
                 {canManage ? (
                   <button className="ws-remove" type="button" onClick={() => onRemove(member)}>
-                    Remove
+                    Deactivate
                   </button>
                 ) : (
                   "—"

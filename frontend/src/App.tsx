@@ -10,6 +10,7 @@ import type { FormEvent } from "react";
 import {
   login,
   register,
+  getInvitationPreview,
 } from "./api/auth";
 
 import {
@@ -43,6 +44,13 @@ import {
   getAuditLogs,
   getMembers,
   removeMember,
+  getWorkspaceSettings,
+  updateWorkspaceSettings,
+  listInvitations,
+  createInvitation,
+  revokeInvitation,
+  type WorkspaceInvitation,
+  type WorkspaceSettings,
   type AuditLog,
   type WorkspaceMember,
   type WorkspaceRole,
@@ -65,6 +73,8 @@ import { BudgetCards } from "./components/budgets/BudgetCards";
 import { BudgetForm } from "./components/budgets/BudgetForm";
 import { TimelineReportView } from "./components/timeline/TimelineReport";
 import { MembersSection } from "./components/workspace/MembersSection";
+import { InvitePanel } from "./components/workspace/InvitePanel";
+import { AuthScreen, type InviteState } from "./components/auth/AuthScreen";
 import { ActivitySection } from "./components/workspace/ActivitySection";
 import { BillingSection } from "./components/billing/BillingSection";
 import { PlatformAdminSection } from "./components/admin/PlatformAdminSection";
@@ -220,11 +230,19 @@ function App() {
     useState("");
   const [name, setName] = useState("");
 
-  const [workspaceSlug, setWorkspaceSlug] =
-    useState("");
-
   const [isRegistering, setIsRegistering] =
     useState(false);
+
+  // Invite links look like /?invite=<token>. The token pins the organization, role and email.
+  const [inviteToken] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("invite"),
+  );
+  const [invite, setInvite] = useState<InviteState>(() =>
+    ({ status: new URLSearchParams(window.location.search).get("invite") ? "loading" : "none" }),
+  );
+  const [workspaceSettings, setWorkspaceSettings] = useState<WorkspaceSettings | null>(null);
+  const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
+  const [inviteError, setInviteError] = useState("");
 
   const [budgets, setBudgets] =
     useState<Budget[]>([]);
@@ -443,6 +461,17 @@ function App() {
   );
 
   useEffect(() => {
+    if (!inviteToken) return;
+    getInvitationPreview(inviteToken)
+      .then((preview) => {
+        setInvite({ status: "ready", email: preview.email, role: preview.role, organization: preview.organization });
+        setEmail(preview.email);
+        setIsRegistering(true);
+      })
+      .catch((err) => setInvite({ status: "invalid", message: err instanceof Error ? err.message : "The link is invalid." }));
+  }, [inviteToken]);
+
+  useEffect(() => {
     const token =
       localStorage.getItem("token");
 
@@ -516,8 +545,10 @@ function App() {
         name,
         email,
         password,
-        workspaceSlug,
+        undefined,
+        inviteToken ?? undefined,
       );
+      if (inviteToken) window.history.replaceState(null, "", window.location.pathname);
 
       localStorage.setItem(
         "token",
@@ -743,128 +774,20 @@ function App() {
 
   if (!isLoggedIn) {
     return (
-      <main className="app">
-        <section className="login-container">
-          <h1>Expense Tracker</h1>
-
-          <p className="login-subtitle">
-            {isRegistering
-              ? "Create an account to start tracking expenses"
-              : "Sign in to manage your expenses"}
-          </p>
-
-          {error && (
-            <p className="error">
-              {error}
-            </p>
-          )}
-
-          <form
-            onSubmit={
-              isRegistering
-                ? handleRegister
-                : handleLogin
-            }
-          >
-            {isRegistering && (
-              <>
-                <label htmlFor="name">
-                  Name
-                </label>
-
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(event) =>
-                    setName(
-                      event.target.value,
-                    )
-                  }
-                  required
-                />
-
-                <label htmlFor="workspace-slug">
-                  Workspace slug (optional)
-                </label>
-
-                <input
-                  id="workspace-slug"
-                  type="text"
-                  value={workspaceSlug}
-                  onChange={(event) =>
-                    setWorkspaceSlug(event.target.value)
-                  }
-                  placeholder="e.g. acme-finance"
-                />
-                <small className="workspace-hint">
-                  Choose a new slug to create a workspace, or enter an existing slug to join it.
-                </small>
-              </>
-            )}
-
-            <label htmlFor="email">
-              Email
-            </label>
-
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value,
-                )
-              }
-              required
-            />
-
-            <label htmlFor="password">
-              Password
-            </label>
-
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value,
-                )
-              }
-              required
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-            >
-              {loading
-                ? isRegistering
-                  ? "Creating account..."
-                  : "Signing in..."
-                : isRegistering
-                  ? "Create Account"
-                  : "Sign In"}
-            </button>
-          </form>
-
-          <button
-            type="button"
-            className="auth-toggle"
-            onClick={() => {
-              setIsRegistering(
-                !isRegistering,
-              );
-              setError("");
-            }}
-          >
-            {isRegistering
-              ? "Already have an account? Sign In"
-              : "New here? Create an account"}
-          </button>
-        </section>
-      </main>
+      <AuthScreen
+        mode={isRegistering ? "create" : "signin"}
+        onModeChange={(mode) => { setIsRegistering(mode === "create"); setError(""); }}
+        invite={invite}
+        name={name}
+        email={email}
+        password={password}
+        loading={loading}
+        error={error}
+        onNameChange={setName}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={isRegistering ? handleRegister : handleLogin}
+      />
     );
   }
 
@@ -873,6 +796,9 @@ function App() {
       setMembersLoading(true);
       setMembersError("");
       setMembers(await getMembers());
+      const [settings, pending] = await Promise.allSettled([getWorkspaceSettings(), listInvitations()]);
+      if (settings.status === "fulfilled") setWorkspaceSettings(settings.value);
+      setInvitations(pending.status === "fulfilled" ? pending.value : []);
     } catch (error) {
       setMembersError(error instanceof Error ? error.message : "Failed to load workspace members");
     } finally {
@@ -906,17 +832,49 @@ function App() {
   }
 
   async function handleRemoveMember(member: WorkspaceMember) {
-    if (!window.confirm(`Remove ${member.name} from this workspace?`)) return;
+    if (!window.confirm(`Deactivate ${member.name}? They lose access immediately and the seat is freed. Their expense history is kept.`)) return;
     try {
       setMembersError("");
       await removeMember(member.id);
       await Promise.all([loadMembers(), loadAuditLogs(auditPage)]);
     } catch (error) {
-      setMembersError(error instanceof Error ? error.message : "Failed to remove member");
+      setMembersError(error instanceof Error ? error.message : "Failed to deactivate member");
+    }
+  }
+
+  async function handleInvite(inviteEmail: string, role: "ADMIN" | "MEMBER"): Promise<string | null> {
+    try {
+      setInviteError("");
+      const created = await createInvitation(inviteEmail, role);
+      await Promise.all([loadMembers(), loadAuditLogs(1)]);
+      return created.token;
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : "Failed to create invitation");
+      return null;
+    }
+  }
+
+  async function handleRevokeInvite(id: number) {
+    try {
+      setInviteError("");
+      await revokeInvitation(id);
+      await Promise.all([loadMembers(), loadAuditLogs(1)]);
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : "Failed to revoke invitation");
+    }
+  }
+
+  async function handleToggleInviteOnly(value: boolean) {
+    try {
+      setInviteError("");
+      setWorkspaceSettings(await updateWorkspaceSettings(value));
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : "Failed to update workspace settings");
     }
   }
 
   const canManageSubscription = subscription?.role === "OWNER";
+  const canInvite = subscription?.role === "OWNER" || subscription?.role === "ADMIN";
   const canViewAdmin = subscription?.isSuperAdmin === true;
   const canUseBudgets = subscription?.entitlements?.features.budgets ?? false;
   const canUseTimeline = subscription?.entitlements?.features.timelineReports ?? false;
@@ -950,7 +908,7 @@ function App() {
                 setView(key);
                 setMobileNavOpen(false);
               }}
-              workspaceName={workspaceSlug || "Your workspace"}
+              workspaceName={workspaceSettings?.name ?? "Your workspace"}
               canViewMembers={canManageSubscription || members.length > 0}
               canViewBilling={Boolean(subscription)}
               canViewAdmin={canViewAdmin}
@@ -962,7 +920,7 @@ function App() {
       <Sidebar
         active={view}
         onNavigate={setView}
-        workspaceName={workspaceSlug || "Your workspace"}
+        workspaceName={workspaceSettings?.name ?? "Your workspace"}
         canViewMembers={canManageSubscription || members.length > 0}
         canViewBilling={Boolean(subscription)}
         canViewAdmin={canViewAdmin}
@@ -1173,6 +1131,17 @@ function App() {
       </section>
 
       <section style={{ display: view === "members" ? undefined : "none" }}>
+        {canInvite && (
+          <InvitePanel
+            settings={workspaceSettings}
+            invitations={invitations}
+            isOwner={canManageSubscription}
+            error={inviteError}
+            onInvite={handleInvite}
+            onRevoke={handleRevokeInvite}
+            onToggleInviteOnly={handleToggleInviteOnly}
+          />
+        )}
         <MembersSection
           members={members}
           loading={membersLoading}
