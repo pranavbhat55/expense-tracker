@@ -3,6 +3,7 @@ import { prisma } from "./prisma.js";
 import { AppError } from "../utils/AppError.js";
 import { getTenantEntitlements } from "./entitlement.service.js";
 import { createAuditLog } from "./audit.service.js";
+import { appUrl, sendInviteEmail } from "./mailer.service.js";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -51,7 +52,12 @@ export async function createInvitation(
         },
     });
     await createAuditLog({ tenantId, userId: actorId, action: "MEMBER_INVITED", entityType: "INVITATION", entityId: invitation.id, metadata: { inviteeEmail: email, role: data.role } });
-    return { invitation: publicInvite(invitation), token };
+    const [tenant, inviter] = await Promise.all([
+        prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } }),
+        prisma.user.findUnique({ where: { id: actorId }, select: { name: true } }),
+    ]);
+    const emailSent = await sendInviteEmail({ to: email, organization: tenant.name, inviterName: inviter?.name ?? "A teammate", role: data.role, link: `${appUrl()}/?invite=${token}` });
+    return { invitation: publicInvite(invitation), token, emailSent };
 }
 
 export async function listInvitations(tenantId: number) {

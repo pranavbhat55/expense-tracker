@@ -5,9 +5,9 @@ import { AppError } from "../utils/AppError.js";
 
 export async function createInvitationController(req: Request, res: Response, next: NextFunction) {
     try {
-        const { invitation, token } = await createInvitation(req.tenantId, req.userId, req.role, req.body);
+        const { invitation, token, emailSent } = await createInvitation(req.tenantId, req.userId, req.role, req.body);
         // The raw token is returned exactly once; only its hash is stored.
-        res.status(201).json({ ...invitation, token });
+        res.status(201).json({ ...invitation, token, emailSent });
     } catch (error) { next(error); }
 }
 

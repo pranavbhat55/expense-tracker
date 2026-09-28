@@ -1,7 +1,9 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../server.js";
 import { prisma } from "../services/prisma.js";
+import { getPlanEntitlements } from "../services/entitlement.service.js";
+import { setMailTransportForTests } from "../services/mailer.service.js";
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const tenantIds: number[] = [];
@@ -24,6 +26,8 @@ async function join(ownerToken: string, name: string, email: string, role: "ADMI
     expect(inv.status).toBe(201);
     return request(app).post("/auth/register").send({ name, email, password: "password123", inviteToken: inv.body.token });
 }
+
+beforeAll(() => setMailTransportForTests(null)); // never send real mail from tests
 
 afterAll(async () => {
     for (const tenantId of tenantIds) {
@@ -178,16 +182,22 @@ describe("organization SaaS flow: invitations, offboarding and team visibility",
         const adminToken = admin.body.token as string;
         expect((await invite(adminToken, `adm2-${suffix}@example.com`, "ADMIN")).status).toBe(403);
 
-        // --- seat reservation: pending invites hold seats (PRO = 5) ---
-        expect((await invite(adminToken, `c-${suffix}@example.com`)).status).toBe(201);
-        const dInvite = await invite(ownerToken, `d-${suffix}@example.com`);
-        expect(dInvite.status).toBe(201);
+        // --- seat reservation: pending invites hold seats, whatever the plan's limit is ---
+        const seatLimit = getPlanEntitlements("PRO").limits.maxUsers as number;
+        const filler: Array<{ id: number; token: string }> = [];
+        for (let n = 0; n < seatLimit - 3; n++) { // owner + Employee A + Admin B already hold 3 seats
+            const r = await invite(n % 2 ? adminToken : ownerToken, `fill-${n}-${suffix}@example.com`);
+            expect(r.status).toBe(201);
+            filler.push(r.body);
+        }
         const overLimit = await invite(ownerToken, `e-${suffix}@example.com`);
         expect(overLimit.status).toBe(403);
         expect(overLimit.body.code).toBe("SEAT_LIMIT_EXCEEDED");
+        const dInvite = { body: filler[0]! };
         expect((await request(app).delete(`/workspace/invitations/${dInvite.body.id}`).set(bearer(ownerToken))).status).toBe(204);
         const eInvite = await invite(ownerToken, `e-${suffix}@example.com`);
         expect(eInvite.status).toBe(201); // revoking freed the seat
+        expect(eInvite.body.emailSent).toBe(false); // no SMTP configured in tests
         const revoked = await request(app).get(`/auth/invitations/${dInvite.body.token}`);
         expect(revoked.status).toBe(410);
 
@@ -243,5 +253,27 @@ describe("organization SaaS flow: invitations, offboarding and team visibility",
         expect((await request(app).patch("/workspace/settings").set(bearer(adminToken)).send({ inviteOnly: false })).status).toBe(403);
         const opened = await request(app).patch("/workspace/settings").set(bearer(ownerToken)).send({ inviteOnly: false });
         expect(opened.body.inviteOnly).toBe(false);
+    });
+});
+
+describe("invitation email", () => {
+    it("emails the invitee when a mail transport is configured and never leaks other tenants' data", async () => {
+        const sent: Array<{ to: string; subject: string; text: string; html: string }> = [];
+        setMailTransportForTests({ sendMail: async (m) => { sent.push(m); return {}; } });
+        try {
+            const owner = await register("Mail Owner", `mail-owner-${suffix}@example.com`);
+            tenantIds.push(owner.body.user.tenantId);
+            const token = owner.body.token as string;
+            await request(app).post("/subscriptions/change-plan").set(bearer(token)).send({ plan: "PRO" });
+            const res = await invite(token, `mail-invitee-${suffix}@example.com`);
+            expect(res.status).toBe(201);
+            expect(res.body.emailSent).toBe(true);
+            expect(sent).toHaveLength(1);
+            expect(sent[0]!.to).toBe(`mail-invitee-${suffix}@example.com`);
+            expect(sent[0]!.text).toContain(`/?invite=${res.body.token}`);
+            expect(sent[0]!.subject).toContain("Mail Owner");
+        } finally {
+            setMailTransportForTests(null);
+        }
     });
 });
