@@ -22,6 +22,8 @@ export const registerSchema = z.object({
         .max(64)
         .regex(/^[a-z0-9-]+$/, "Workspace slug may contain lowercase letters, numbers, and hyphens")
         .optional(),
+
+    inviteToken: z.string().trim().min(10).max(200).optional(),
 });
 export const loginSchema = z.object({
     email: z

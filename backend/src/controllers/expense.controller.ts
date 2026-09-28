@@ -9,6 +9,16 @@ import {
 } from "../services/expense.service.js";
 import { enforceExpenseQuota, requireFeature } from "../services/entitlement.service.js";
 
+import { AppError } from "../utils/AppError.js";
+
+// Members only ever see their own expenses. OWNER/ADMIN may opt into the organization-wide
+// view with ?scope=team; the role comes from the DB re-check in authenticate, not the token.
+function expenseOwner(req: Request): number | null {
+    if (req.query.scope !== "team") return req.userId;
+    if (req.role === "MEMBER") throw new AppError("Only owners and admins can view team expenses", 403, "FORBIDDEN");
+    return null;
+}
+
 export async function createExpenseController(
     req: Request,
     res: Response,
@@ -42,7 +52,7 @@ export async function getExpensesController(
         const page = Number(req.query.page ?? 1);
         const limit = Number(req.query.limit ?? 10);
 	const expenses = await getExpenses(
-    req.userId,
+    expenseOwner(req),
     req.tenantId,
     {
         ...(typeof req.query.month === "string"
@@ -74,7 +84,7 @@ export async function getExpenseSummaryController(
                 : undefined;
 
         const summary = await getExpenseSummary(
-            req.userId,
+            expenseOwner(req),
             req.tenantId,
             month,
         );

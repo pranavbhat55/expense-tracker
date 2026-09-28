@@ -54,7 +54,7 @@ export async function getTenantEntitlements(tenantId: number) {
     const base = getPlanEntitlements(plan);
     const [expensesThisMonth, users] = await Promise.all([
         prisma.expense.count({ where: { tenantId, date: monthRange() } }),
-        prisma.user.count({ where: { tenantId } }),
+        prisma.user.count({ where: { tenantId, deactivatedAt: null } }),
     ]);
     return {
         subscription,

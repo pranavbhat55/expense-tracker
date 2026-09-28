@@ -10,7 +10,9 @@ export type AuditAction =
     | "BUDGET_CREATED"
     | "BUDGET_UPDATED"
     | "BUDGET_DELETED"
-    | "SUBSCRIPTION_PLAN_CHANGED";
+    | "SUBSCRIPTION_PLAN_CHANGED"
+    | "MEMBER_INVITED"
+    | "INVITATION_REVOKED";
 
 export async function createAuditLog(data: {
     tenantId: number;
