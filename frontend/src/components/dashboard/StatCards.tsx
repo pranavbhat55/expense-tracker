@@ -18,8 +18,13 @@ export function StatCards({ summary, periodLabel }: { summary: ExpenseSummary; p
         <span className="db-ledger-hero__figure num">{formatCurrency(summary.total)}</span>
         {top.length > 0 && (
           <div className="db-spark" aria-hidden>
-            {top.map((c) => (
-              <span key={c.category} className="db-spark__bar" style={{ height: `${8 + (c.total / max) * 24}px` }} title={c.category} />
+            {top.map((c, i) => (
+              <span
+                key={c.category}
+                className="db-spark__bar"
+                style={{ height: `${8 + (c.total / max) * 24}px`, background: i % 2 === 0 ? "linear-gradient(180deg, var(--brand-300), var(--brand-600))" : "linear-gradient(180deg, var(--accent2-300), var(--accent2-700))" }}
+                title={c.category}
+              />
             ))}
           </div>
         )}

@@ -14,15 +14,23 @@
   content: "";
   position: absolute;
   inset: -40% -10% auto auto;
-  width: 380px; height: 380px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand-500) 16%, transparent) 0%, transparent 70%);
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--brand-500) 20%, transparent) 0%, transparent 68%);
+  pointer-events: none;
+}
+.db-ledger-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto auto -60% 10%;
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent2-500) 16%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 .db-ledger-hero__main { display: flex; flex-direction: column; gap: 6px; }
 .db-ledger-hero__label { font-size: 13px; color: var(--ink-500); }
 .db-ledger-hero__figure {
   font-size: 60px; font-weight: 600; line-height: 1; letter-spacing: -0.01em;
-  background: linear-gradient(160deg, var(--ink-900) 35%, var(--brand-600) 130%);
+  background: linear-gradient(155deg, var(--ink-900) 25%, var(--brand-600) 85%, var(--accent2-600, var(--accent2-500)) 130%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .db-ledger-hero__stats { display: flex; align-items: center; gap: var(--space-6); }
@@ -105,4 +113,4 @@
 .db-ring-item__meta em { font-style: normal; color: var(--ink-500); }
 
 .db-spark { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-top: 2px; }
-.db-spark__bar { width: 5px; border-radius: 2px; background: linear-gradient(180deg, var(--brand-300), var(--brand-600)); opacity: .85; }
+.db-spark__bar { width: 5px; border-radius: 2px; opacity: .9; }

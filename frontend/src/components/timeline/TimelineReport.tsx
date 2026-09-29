@@ -118,7 +118,7 @@ export function TimelineReportView({
                 <BarChart data={report.timeline} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                   <defs>
                     <linearGradient id="tlBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--brand-500)" />
+                      <stop offset="0%" stopColor="var(--brand-300)" />
                       <stop offset="100%" stopColor="var(--brand-700)" />
                     </linearGradient>
                   </defs>
