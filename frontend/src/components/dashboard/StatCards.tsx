@@ -8,12 +8,21 @@ export function StatCards({ summary, periodLabel }: { summary: ExpenseSummary; p
     { label: "Average", value: formatCurrency(summary.average) },
     { label: "Largest", value: formatCurrency(summary.highest) },
   ];
+  const top = [...summary.byCategory].sort((a, b) => b.total - a.total).slice(0, 6);
+  const max = Math.max(1, ...top.map((c) => c.total));
 
   return (
     <div className="db-ledger-hero">
       <div className="db-ledger-hero__main">
         <span className="db-ledger-hero__label">Total spent · {periodLabel}</span>
         <span className="db-ledger-hero__figure num">{formatCurrency(summary.total)}</span>
+        {top.length > 0 && (
+          <div className="db-spark" aria-hidden>
+            {top.map((c) => (
+              <span key={c.category} className="db-spark__bar" style={{ height: `${8 + (c.total / max) * 24}px` }} title={c.category} />
+            ))}
+          </div>
+        )}
       </div>
       <div className="db-ledger-hero__stats">
         {supporting.map((s, i) => (

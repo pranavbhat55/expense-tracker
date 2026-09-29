@@ -3,7 +3,9 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
 }
+.ui-card:hover { box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--brand-500) 24%, var(--border)); }
 .ui-card--padded { padding: var(--space-5); }
 
 .ui-btn {
@@ -17,8 +19,12 @@
   transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 .ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.ui-btn--primary { background: var(--brand-500); color: #fff; }
-.ui-btn--primary:hover:not(:disabled) { background: var(--brand-600); }
+.ui-btn--primary {
+  background: linear-gradient(155deg, var(--brand-300) 0%, var(--brand-500) 45%, var(--brand-700) 100%);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(25,26,30,.08), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.ui-btn--primary:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 6px 18px rgba(169,118,15,.32), inset 0 1px 0 rgba(255,255,255,.3); }
 .ui-btn--secondary { background: var(--surface); color: var(--ink-900); border-color: var(--border); }
 .ui-btn--secondary:hover:not(:disabled) { background: var(--ink-50); }
 .ui-btn--ghost { background: transparent; color: var(--ink-700); }
@@ -121,3 +127,10 @@
 .ui-skeletons { display: flex; flex-direction: column; gap: 14px; padding: var(--space-5); }
 .ui-skeleton { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--ink-100) 25%, var(--ink-50) 45%, var(--ink-100) 65%); background-size: 200% 100%; animation: ui-shimmer 1.3s ease-in-out infinite; }
 @keyframes ui-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+
+/* ---- radial progress ---- */
+.ui-radial { position: relative; flex-shrink: 0; }
+.ui-radial svg { display: block; }
+.ui-radial__arc { transition: stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1); }
+.ui-radial__label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--ink-900); }

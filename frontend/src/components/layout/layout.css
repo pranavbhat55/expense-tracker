@@ -25,7 +25,8 @@
 .sb-brand { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3) var(--space-5); }
 .sb-brand__mark {
   width: 32px; height: 32px; border-radius: var(--radius-sm);
-  background: var(--brand-500); color: #fff; font-weight: 700;
+  background: linear-gradient(155deg, var(--brand-300), var(--brand-600));
+  color: #fff; font-weight: 700; box-shadow: 0 2px 6px rgba(169,118,15,.35);
   display: flex; align-items: center; justify-content: center;
 }
 .sb-brand__name { font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: var(--ink-900); }
@@ -43,7 +44,12 @@
   margin-left: -1px;
 }
 .sb-nav-item:hover { color: var(--ink-900); }
-.sb-nav-item--active { border-left-color: var(--brand-500); color: var(--ink-900); font-weight: 600; }
+.sb-nav-item--active {
+  border-left-color: var(--brand-500);
+  color: var(--ink-900);
+  font-weight: 600;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-500) 10%, transparent), transparent 70%);
+}
 .sb-nav-item__icon { width: 18px; text-align: center; color: inherit; opacity: 0.85; }
 
 .sb-plan {

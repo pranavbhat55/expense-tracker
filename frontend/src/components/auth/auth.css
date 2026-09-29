@@ -11,11 +11,24 @@
 .au-brand li { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-top: 1px solid rgba(242, 240, 233, 0.14); }
 .au-brand li strong { font-size: 15px; font-weight: 600; color: #d9ab52; }
 .au-brand li span { font-size: 14px; line-height: 1.5; color: rgba(242, 240, 233, 0.66); }
-.au-brand__glyph { position: absolute; right: -40px; bottom: -120px; font-family: var(--font-serif); font-size: 460px; line-height: 1; color: rgba(217, 171, 82, 0.07); user-select: none; }
+.au-brand__glyph { position: absolute; right: -40px; bottom: -120px; font-family: var(--font-serif); font-size: 460px; line-height: 1; color: rgba(217, 171, 82, 0.09); user-select: none; animation: au-float 9s ease-in-out infinite; }
+.au-brand::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(217,171,82,.16) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(217,171,82,.10) 0%, transparent 40%);
+  pointer-events: none;
+}
+@keyframes au-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+@media (prefers-reduced-motion: reduce) { .au-brand__glyph { animation: none; } }
+.au-brand li { position: relative; }
+.au-brand li::before { content: ""; position: absolute; left: 0; top: 0; width: 28px; height: 1px; background: var(--brand-300); }
 
 .au-panel { display: grid; place-items: center; padding: 32px; background: var(--canvas); }
 .au-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: var(--space-4); }
-.au-card h2 { font-family: var(--font-serif); font-weight: 600; font-size: 30px; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
+.au-card { animation: ui-rise .4s cubic-bezier(.2,.7,.2,1) both; }
+.au-card h2 { font-family: var(--font-serif); font-weight: 600; font-size: 32px; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
 .au-muted { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-500); }
 .au-error { margin: 0; padding: 10px 12px; font-size: 13px; color: var(--danger-500); background: var(--danger-100); border-left: 3px solid var(--danger-500); }
 .au-form { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-2); }
