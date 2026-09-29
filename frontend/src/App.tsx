@@ -167,6 +167,7 @@ function App() {
   const [expenses, setExpenses] =
     useState<Expense[]>([]);
 
+  const [personalSummary, setPersonalSummary] = useState<ExpenseSummary | null>(null);
   const [summary, setSummary] =
     useState<ExpenseSummary | null>(null);
 
@@ -292,6 +293,16 @@ function App() {
         );
 
       setSummary(response);
+
+      // Budgets are always personal (Budget.userId), regardless of any Dashboard/Expenses
+      // "Whole team" toggle - so they must never be measured against team-wide spend.
+      if (expenseScope === "mine") {
+        setPersonalSummary(response);
+      } else {
+        setPersonalSummary(
+          await getExpenseSummary(filterMonth || undefined, "mine"),
+        );
+      }
     } catch (error) {
       console.error(error);
       setError(
@@ -465,7 +476,7 @@ function App() {
         observerRef.current.observe(node);
       }
     },
-    [loadingMore, hasMore, page],
+    [loadingMore, hasMore, page, filterMonth, filterCategory, expenseScope],
   );
 
   useEffect(() => {
@@ -761,6 +772,7 @@ function App() {
 
     setExpenses([]);
     setSummary(null);
+    setPersonalSummary(null);
     setBudgets([]);
     setTimelineReport(null);
     setSubscription(null);
@@ -1086,7 +1098,7 @@ function App() {
 
         <BudgetCards
           budgets={budgets}
-          summary={summary}
+          summary={personalSummary}
           onAdd={() => setBudgetDrawerOpen(true)}
           onEdit={(budget) => {
             setEditingBudgetId(budget.id);
@@ -1130,7 +1142,7 @@ function App() {
             <CategoryBreakdown summary={summary} />
           </div>
           <div className="db-dashboard-grid--secondary">
-            {expenseScope === "mine" && <BudgetHealth budgets={budgets} summary={summary} />}
+            <BudgetHealth budgets={budgets} summary={personalSummary} />
             <RecentExpenses expenses={expenses} />
           </div>
         </div>
