@@ -312,6 +312,12 @@ function App() {
   }
 
   async function loadTimelineReport() {
+    if (subscription && !subscription.entitlements?.features.timelineReports) {
+      setTimelineReport(null);
+      setTimelineError("");
+      return;
+    }
+
     try {
       setTimelineLoading(true);
       setTimelineError("");
@@ -379,7 +385,6 @@ function App() {
       setSubscription(response);
       setSelectedPlan(response.plan);
       await loadSubscription();
-      await loadTimelineReport();
     } catch (error) {
       console.error(
         "Failed to update subscription:",
@@ -506,7 +511,6 @@ function App() {
     loadExpenses(1);
     loadSummary();
     loadBudgets();
-    loadTimelineReport();
     loadSubscription();
     loadMembers();
     loadAuditLogs();
@@ -539,7 +543,6 @@ function App() {
       await loadExpenses();
       await loadSummary();
       await loadBudgets();
-      await loadTimelineReport();
       await loadSubscription();
       await loadMembers();
       await loadAuditLogs();
@@ -585,7 +588,6 @@ function App() {
       await loadExpenses();
       await loadSummary();
       await loadBudgets();
-      await loadTimelineReport();
       await loadSubscription();
       await loadMembers();
       await loadAuditLogs();
