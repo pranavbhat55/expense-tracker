@@ -32,7 +32,7 @@ import type {
 } from "./types/expense";
 
 import type { TimelineReport } from "./types/report";
-import { getTimelineReport } from "./api/reports";
+import { getTimelineReport, TimelineApiError } from "./api/reports";
 import {
   createSubscription,
   getSubscription,
@@ -79,6 +79,7 @@ import { AuthScreen, type InviteState } from "./components/auth/AuthScreen";
 import { ActivitySection } from "./components/workspace/ActivitySection";
 import { BillingSection } from "./components/billing/BillingSection";
 import { PlatformAdminSection } from "./components/admin/PlatformAdminSection";
+import { ToastHost, showToast } from "./components/common/Toast";
 
 const CSV_COLUMNS = [
   "Date",
@@ -335,6 +336,15 @@ function App() {
         error,
       );
       setTimelineReport(null);
+
+      // A 403 here means the plan doesn't include this feature - the amber
+      // 'PRO feature' banner already says so, so don't pile a second, more
+      // alarming error message about a request that was never expected to succeed.
+      if (error instanceof TimelineApiError && error.status === 403) {
+        setTimelineError("");
+        return;
+      }
+
       setTimelineError(
         error instanceof Error
           ? error.message
@@ -925,7 +935,9 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
+    <>
+      <ToastHost />
+      <div className="app-shell">
       {mobileNavOpen && (
         <div
           className="ui-modal__overlay"
@@ -996,6 +1008,7 @@ function App() {
         onSubmit={async (event) => {
           await handleExpenseSubmit(event);
           setExpenseDrawerOpen(false);
+          showToast(editingExpenseId !== null ? "Expense updated" : "Expense added");
         }}
       />
 
@@ -1061,6 +1074,7 @@ function App() {
             setBudgetMonth("");
             setEditingBudgetId(null);
             setBudgetDrawerOpen(false);
+            showToast(editingBudgetId !== null ? "Budget updated" : "Budget set");
             await loadBudgets();
           } catch (error) {
             console.error(error);
@@ -1252,6 +1266,7 @@ function App() {
         <MobileNavigation active={view} onNavigate={setView} />
       </main>
     </div>
+    </>
   );
 }
 

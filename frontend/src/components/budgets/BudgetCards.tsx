@@ -1,4 +1,5 @@
 import { Badge, Button, EmptyState } from "../common/primitives";
+import { GrowBar } from "../common/GrowBar";
 import type { Budget } from "../../api/expenses";
 import type { ExpenseSummary } from "../../types/expense";
 import "./budgets.css";
@@ -49,7 +50,7 @@ export function BudgetCards({
               <Badge tone={tone}>{over ? "Over budget" : `${Math.round(pct)}%`}</Badge>
             </div>
             <div className="bg-row__track">
-              <div className={`bg-row__fill bg-row__fill--${tone}`} style={{ width: `${pct}%` }} />
+              <GrowBar className={`bg-row__fill bg-row__fill--${tone}`} pct={pct} />
             </div>
             <div className="bg-row__bottom">
               <span className="bg-row__nums num">

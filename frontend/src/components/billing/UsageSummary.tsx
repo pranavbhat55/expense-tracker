@@ -1,4 +1,5 @@
 import { Badge } from "../common/primitives";
+import { GrowBar } from "../common/GrowBar";
 import type { Entitlements } from "../../api/subscription";
 import "./billing.css";
 
@@ -15,7 +16,7 @@ export function UsageSummary({ entitlements, usage, quota }: { entitlements: Ent
       </div>
       {quota !== null && (
         <div className="db-category-row__track">
-          <div className="db-category-row__fill" style={{ width: `${pct}%` }} />
+          <GrowBar className="db-category-row__fill" pct={pct} />
         </div>
       )}
       <div className="bl-usage__badges">

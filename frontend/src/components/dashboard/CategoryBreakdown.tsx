@@ -1,4 +1,5 @@
 import { Card, EmptyState } from "../common/primitives";
+import { GrowBar } from "../common/GrowBar";
 import type { ExpenseSummary } from "../../types/expense";
 import "./dashboard.css";
 
@@ -39,7 +40,7 @@ export function CategoryBreakdown({ summary }: { summary: ExpenseSummary | null 
               <span>{formatCurrency(c.total)}</span>
             </div>
             <div className="db-category-row__track">
-              <div className="db-category-row__fill" style={{ width: `${max ? (c.total / max) * 100 : 0}%` }} />
+              <GrowBar className="db-category-row__fill" pct={max ? (c.total / max) * 100 : 0} />
             </div>
           </div>
         ))}

@@ -1,8 +1,16 @@
+import { useEffect, useState } from "react";
+
 export function RadialProgress({ pct, tone, size = 56, label }: { pct: number; tone: "success" | "warning" | "danger"; size?: number; label?: string }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setDisplay(pct));
+    return () => cancelAnimationFrame(raf);
+  }, [pct]);
+
   const stroke = 5;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(100, pct));
+  const clamped = Math.max(0, Math.min(100, display));
   const color = tone === "danger" ? "var(--danger-500)" : tone === "warning" ? "var(--warning-500)" : "var(--success-500)";
   return (
     <div className="ui-radial" style={{ width: size, height: size }}>

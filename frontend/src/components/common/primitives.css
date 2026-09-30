@@ -86,7 +86,10 @@
   justify-content: center;
   z-index: 100;
   padding: var(--space-4);
+  opacity: 0;
+  transition: opacity .18s ease;
 }
+.ui-modal__overlay--visible { opacity: 1; }
 .ui-modal {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -95,7 +98,12 @@
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
+  opacity: 0;
+  transform: translateY(10px) scale(.97);
+  transition: opacity .2s cubic-bezier(.2,.8,.2,1), transform .2s cubic-bezier(.2,.8,.2,1);
 }
+.ui-modal--visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .ui-modal, .ui-modal__overlay { transition: none; } }
 .ui-modal__header {
   display: flex;
   align-items: center;
@@ -119,10 +127,17 @@
 .ui-btn:active:not(:disabled) { transform: translateY(1px); }
 .ui-btn--primary:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(169, 118, 15, 0.28); }
 
-.ui-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-50); border: 1px solid var(--border); border-radius: var(--radius-md); }
-.ui-seg__btn { padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-500); background: transparent; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+.ui-seg { position: relative; display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-50); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.ui-seg__thumb {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 4px);
+  background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
+  transition: transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.ui-seg--right .ui-seg__thumb { transform: translateX(100%); }
+.ui-seg__btn { position: relative; z-index: 1; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-500); background: transparent; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: color .15s; }
 .ui-seg__btn:hover { color: var(--ink-900); }
-.ui-seg__btn--on { background: var(--surface); color: var(--ink-900); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+.ui-seg__btn--on { color: var(--ink-900); }
+@media (prefers-reduced-motion: reduce) { .ui-seg__thumb { transition: none; } }
 
 .ui-skeletons { display: flex; flex-direction: column; gap: 14px; padding: var(--space-5); }
 .ui-skeleton { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--ink-100) 25%, var(--ink-50) 45%, var(--ink-100) 65%); background-size: 200% 100%; animation: ui-shimmer 1.3s ease-in-out infinite; }
@@ -134,3 +149,21 @@
 .ui-radial svg { display: block; }
 .ui-radial__arc { transition: stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1); }
 .ui-radial__label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--ink-900); }
+
+.ui-badge--danger { animation: ui-pulse 2.2s ease-in-out infinite; }
+@keyframes ui-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(166,59,46,.25); } 50% { box-shadow: 0 0 0 5px rgba(166,59,46,0); } }
+@media (prefers-reduced-motion: reduce) { .ui-badge--danger { animation: none; } }
+
+.db-category-row__fill, .bg-row__fill { transition: width .7s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .db-category-row__fill, .bg-row__fill, .ui-radial__arc { transition: none; } }
+
+/* ---- toast ---- */
+.ui-toast-host { position: fixed; right: var(--space-5); bottom: var(--space-5); z-index: 200; display: flex; flex-direction: column-reverse; gap: var(--space-2); }
+.ui-toast {
+  padding: 12px 18px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; color: #fff;
+  box-shadow: var(--shadow-lg); animation: ui-toast-in .35s cubic-bezier(.2,.8,.2,1) both;
+}
+.ui-toast--success { background: linear-gradient(155deg, var(--success-500), color-mix(in srgb, var(--success-500) 70%, black)); }
+.ui-toast--danger { background: linear-gradient(155deg, var(--danger-500), color-mix(in srgb, var(--danger-500) 70%, black)); }
+@keyframes ui-toast-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ui-toast { animation: none; } }

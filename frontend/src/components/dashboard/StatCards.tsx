@@ -1,5 +1,6 @@
 import type { ExpenseSummary } from "../../types/expense";
 import { formatCurrency } from "../../utils/format";
+import { CountUp } from "../common/CountUp";
 import "./dashboard.css";
 
 export function StatCards({ summary, periodLabel }: { summary: ExpenseSummary; periodLabel: string }) {
@@ -15,7 +16,7 @@ export function StatCards({ summary, periodLabel }: { summary: ExpenseSummary; p
     <div className="db-ledger-hero">
       <div className="db-ledger-hero__main">
         <span className="db-ledger-hero__label">Total spent · {periodLabel}</span>
-        <span className="db-ledger-hero__figure num">{formatCurrency(summary.total)}</span>
+        <span className="db-ledger-hero__figure num"><CountUp value={summary.total} format={(n) => formatCurrency(n)} /></span>
         {top.length > 0 && (
           <div className="db-spark" aria-hidden>
             {top.map((c, i) => (
