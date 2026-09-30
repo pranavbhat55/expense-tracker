@@ -765,6 +765,35 @@ Invitation emails are optional: set `SMTP_URL` (and `EMAIL_FROM`, `APP_URL`) in 
 otherwise the Members page shows a copyable link. Grant platform admin with
 `UPDATE "User" SET "isSuperAdmin" = true WHERE email = 'you@example.com';`
 
+### Demo data
+
+To try every role and plan without creating accounts by hand:
+
+```bash
+cd backend
+npm run seed:demo             # loads once; safe to re-run (it detects existing demo data)
+npm run seed:demo -- --reset  # wipes previous demo workspaces first
+```
+
+This goes through the real registration/invitation/plan-change code paths (not raw SQL inserts), so
+audit logs, seat accounting and tenant isolation are all genuine. Password for every account: `Demo@1234`.
+
+| Email | Role | Workspace | What it shows |
+| --- | --- | --- | --- |
+| aditi@acme.demo | OWNER | Acme Design Co (PRO) | Everything: team view, invites, budgets over/under limit, billing |
+| rahul@acme.demo | ADMIN | Acme Design Co (PRO) | Can invite members and see the team view; cannot manage billing or change roles |
+| priya@acme.demo | MEMBER | Acme Design Co (PRO) | Sees only her own expenses - no team toggle, no invite panel |
+| karan@acme.demo | MEMBER | Acme Design Co (PRO) | A second employee - proves isolation from Priya |
+| vikram@acme.demo | *(deactivated)* | Acme Design Co (PRO) | Login is refused; his past expenses remain visible in the team view |
+| nikhil@northwind.demo | OWNER | Northwind Traders (FREE) | Timeline/CSV locked, 1/1 seats used, sees none of Acme's data |
+| sam@solo.demo | OWNER | Sam's Freelance Studio (FREE) | An individual's own private workspace |
+| bala@bluebird.demo | OWNER | Bluebird Studio (BUSINESS) | Unlimited seats |
+| leela@legacy.demo | OWNER | Legacy Corp | Subscription cancelled - features disabled |
+| admin@expenso.demo | SUPER-ADMIN | Expenso HQ | Platform Admin console: every tenant above, suspend/reactivate |
+
+The seed also leaves one pending invitation (meera@acme.demo) and prints its accept-link so you can
+try the invite-acceptance screen.
+
 ### Tests
 
 ```bash
