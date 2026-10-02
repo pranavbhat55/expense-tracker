@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./primitives.css";
 
+/* eslint-disable react-refresh/only-export-components -- notify()/ToastMessage share this file with ToastHost by design */
+
 export interface ToastMessage { id: number; text: string }
 let nextId = 1;
 let push: ((text: string) => void) | null = null;
