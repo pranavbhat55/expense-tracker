@@ -12,6 +12,8 @@ import {
 
 import { validateBody } from "../middleware/validate.js";
 
+import { invitationPreviewController } from "../controllers/invitation.controller.js";
+
 const router = Router();
 
 router.post(
@@ -25,5 +27,8 @@ router.post(
     validateBody(loginSchema),
     loginController,
 );
+
+// Public: lets the sign-up page show which organization an invite link belongs to.
+router.get("/invitations/:token", invitationPreviewController);
 
 export default router;

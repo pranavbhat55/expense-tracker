@@ -4,7 +4,7 @@ import { getPlanEntitlements } from "../services/entitlement.service.js";
 describe("plan entitlements", () => {
     it("enforces distinct free, pro, and business limits", () => {
         expect(getPlanEntitlements("FREE").limits).toEqual({ maxUsers: 1, maxExpensesPerMonth: 100 });
-        expect(getPlanEntitlements("PRO").limits).toEqual({ maxUsers: 5, maxExpensesPerMonth: 1000 });
+        expect(getPlanEntitlements("PRO").limits).toEqual({ maxUsers: 25, maxExpensesPerMonth: 1000 });
         expect(getPlanEntitlements("BUSINESS").limits).toEqual({ maxUsers: null, maxExpensesPerMonth: null });
     });
 

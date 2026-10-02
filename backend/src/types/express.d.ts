@@ -6,6 +6,7 @@ declare global {
             userId: number;
             tenantId: number;
             role: "OWNER" | "ADMIN" | "MEMBER";
+            isSuperAdmin: boolean;
         }
     }
 }

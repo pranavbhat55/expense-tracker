@@ -1,0 +1,93 @@
+:root {
+  /* Accent - aged gold, spent sparingly on primary actions/emphasis only.
+     Kept as --brand-* names for compatibility with existing components;
+     values are the new ledger palette, not generic SaaS indigo. */
+  --brand-50: #fdf1e0;
+  --brand-100: #f8dfae;
+  --brand-300: #eeae3f;
+  --brand-500: #c6780c;
+  --brand-600: #a35f08;
+  --brand-700: #7a4506;
+
+  /* Second jewel tone: keeps the palette from reading as one-color-does-everything */
+  --accent2-300: #4fae90;
+  --accent2-500: #147a5c;
+  --accent2-700: #0d5943;
+
+  /* Ink / paper - warm, not pure black/white */
+  --ink-900: #14151a;
+  --ink-700: #43454c;
+  --ink-500: #6d6f78;
+  --ink-300: #a3a19a;
+  --ink-100: #e6e3da;
+  --ink-50: #efede6;
+  --surface: #fffefb;
+  --canvas: #f7f6f2;
+  --border: #dedbd3;
+
+  /* Signal colors - restrained, not neon */
+  --success-500: #147a5c;
+  --success-100: #e0f2ea;
+  --warning-500: #a9760f;
+  --warning-100: #f5ead2;
+  --danger-500: #a63b2e;
+  --danger-100: #f6e4e1;
+
+  /* Type: a display serif with old-style figures for numerals/headlines,
+     a quiet grotesk for UI - not the default single-family setup */
+  --font-serif: "Fraunces", "Iowan Old Style", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+
+  /* Radius varies deliberately by density rather than repeating one value */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --shadow-sm: 0 1px 2px rgba(25, 26, 30, 0.04);
+  --shadow-md: 0 6px 20px rgba(25, 26, 30, 0.07);
+  --shadow-lg: 0 16px 40px rgba(25, 26, 30, 0.12);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --sidebar-w: 240px;
+  --topbar-h: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink-900: #f5f2ea;
+    --ink-700: #cdcabf;
+    --ink-500: #928f84;
+    --ink-300: #57554d;
+    --ink-100: #2c2d29;
+    --ink-50: #232420;
+    --surface: #1e1f21;
+    --canvas: #17181a;
+    --border: #35322a;
+    --brand-50: #2e2210;
+    --brand-100: #402d10;
+    --success-100: #12302a;
+    --warning-100: #33280f;
+    --danger-100: #35201c;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--canvas);
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular, old-style serif numerals - used for money throughout the app */
+.num {
+  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
+}

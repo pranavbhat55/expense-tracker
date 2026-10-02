@@ -22,7 +22,7 @@ export async function getSubscriptionController(
     try {
         const { subscription, entitlements } = await getTenantEntitlements(req.tenantId);
         if (req.baseUrl === "/subscription" && req.path === "/") return res.status(200).json(subscription);
-        return res.status(200).json({ subscription, role: req.role, plan: subscription.plan, status: subscription.status, licenseKey: req.role === "OWNER" ? subscription.licenseKey : undefined, entitlements });
+        return res.status(200).json({ subscription, role: req.role, isSuperAdmin: req.isSuperAdmin, plan: subscription.plan, status: subscription.status, licenseKey: req.role === "OWNER" ? subscription.licenseKey : undefined, entitlements });
     } catch (error) {
         if (error instanceof AppError) return res.status(error.statusCode).json({ message: error.message, ...(error.code ? { code: error.code } : {}) });
         console.error(
