@@ -79,7 +79,7 @@ import { AuthScreen, type InviteState } from "./components/auth/AuthScreen";
 import { ActivitySection } from "./components/workspace/ActivitySection";
 import { BillingSection } from "./components/billing/BillingSection";
 import { PlatformAdminSection } from "./components/admin/PlatformAdminSection";
-import { ToastHost, showToast } from "./components/common/Toast";
+import { ToastHost, notify } from "./components/common/Toast";
 
 const CSV_COLUMNS = [
   "Date",
@@ -878,6 +878,7 @@ function App() {
       setMembersError("");
       await removeMember(member.id);
       await Promise.all([loadMembers(), loadAuditLogs(auditPage)]);
+      notify(`${member.name} deactivated - seat freed`);
     } catch (error) {
       setMembersError(error instanceof Error ? error.message : "Failed to deactivate member");
     }
@@ -888,6 +889,7 @@ function App() {
       setInviteError("");
       const created = await createInvitation(inviteEmail, role);
       await Promise.all([loadMembers(), loadAuditLogs(1)]);
+      notify(created.emailSent === false ? "Invite created - share the link" : `Invite emailed to ${inviteEmail}`);
       return created.token;
     } catch (error) {
       setInviteError(error instanceof Error ? error.message : "Failed to create invitation");
@@ -900,6 +902,7 @@ function App() {
       setInviteError("");
       await revokeInvitation(id);
       await Promise.all([loadMembers(), loadAuditLogs(1)]);
+      notify("Invitation revoked");
     } catch (error) {
       setInviteError(error instanceof Error ? error.message : "Failed to revoke invitation");
     }
@@ -1008,7 +1011,8 @@ function App() {
         onSubmit={async (event) => {
           await handleExpenseSubmit(event);
           setExpenseDrawerOpen(false);
-          showToast(editingExpenseId !== null ? "Expense updated" : "Expense added");
+          notify(editingExpenseId !== null ? "Expense updated" : "Expense added");
+          notify(editingExpenseId !== null ? "Expense updated" : "Expense added");
         }}
       />
 
@@ -1074,7 +1078,7 @@ function App() {
             setBudgetMonth("");
             setEditingBudgetId(null);
             setBudgetDrawerOpen(false);
-            showToast(editingBudgetId !== null ? "Budget updated" : "Budget set");
+            notify(editingBudgetId !== null ? "Budget updated" : "Budget set");
             await loadBudgets();
           } catch (error) {
             console.error(error);
@@ -1129,6 +1133,7 @@ function App() {
             try {
               await deleteBudget(id);
               await loadBudgets();
+              notify("Budget deleted");
             } catch (error) {
               console.error(error);
               setError("Failed to delete budget");
@@ -1224,11 +1229,11 @@ function App() {
       <section style={{ display: view === "timeline" ? undefined : "none" }}>
         <TimelineReportView
           canUseTimeline={canUseTimeline}
+          error={canUseTimeline ? timelineError : ""}
           from={timelineFrom}
           to={timelineTo}
           groupBy={timelineGroupBy}
           loading={timelineLoading}
-          error={timelineError}
           report={timelineReport}
           onFromChange={setTimelineFrom}
           onToChange={setTimelineTo}

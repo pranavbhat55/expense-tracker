@@ -32,7 +32,7 @@ export function ActivitySection({
       ) : logs.length === 0 ? (
         <EmptyState title="No activity yet" description="Workspace changes will be recorded here." />
       ) : (
-        <div className="ws-audit-list">
+        <div className="ws-audit-list ui-stagger">
           {logs.map((log) => (
             <div className="ws-audit-item" key={log.id}>
               <div className="ws-audit-item__dot" />
