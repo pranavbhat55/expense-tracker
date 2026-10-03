@@ -3,21 +3,21 @@
 /* Brand panel is deliberately fixed-dark in both themes: it is the product's signature surface */
 .au-brand { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 56px; background: #191a1e; color: #f2f0e9; }
 .au-brand__top { display: flex; align-items: center; gap: 12px; }
-.au-brand__mark { width: 32px; height: 32px; display: grid; place-items: center; background: #d9ab52; color: #191a1e; font-weight: 700; border-radius: 4px; }
+.au-brand__mark { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand-500); color: #ffffff; font-weight: 700; border-radius: 4px; }
 .au-brand__name { font-family: var(--font-serif); font-size: 20px; font-weight: 600; }
 .au-brand__body { position: relative; z-index: 1; max-width: 460px; }
 .au-brand h1 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(32px, 3.4vw, 46px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 40px; }
 .au-brand ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .au-brand li { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-top: 1px solid rgba(242, 240, 233, 0.14); }
-.au-brand li strong { font-size: 15px; font-weight: 600; color: #d9ab52; }
+.au-brand li strong { font-size: 15px; font-weight: 600; color: #8fc1ea; }
 .au-brand li span { font-size: 14px; line-height: 1.5; color: rgba(242, 240, 233, 0.66); }
-.au-brand__glyph { position: absolute; right: -40px; bottom: -120px; font-family: var(--font-serif); font-size: 460px; line-height: 1; background: linear-gradient(160deg, rgba(238,174,63,.16), rgba(20,122,92,.14)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; animation: au-float 9s ease-in-out infinite; }
+.au-brand__glyph { position: absolute; right: -40px; bottom: -120px; font-family: var(--font-serif); font-size: 460px; line-height: 1; background: linear-gradient(160deg, rgba(127,178,222,.18), rgba(31,138,115,.14)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; animation: au-float 9s ease-in-out infinite; }
 .au-brand::before {
   content: "";
   position: absolute; inset: 0;
   background:
-    radial-gradient(circle at 15% 20%, rgba(238,174,63,.18) 0%, transparent 45%),
-    radial-gradient(circle at 85% 75%, rgba(20,122,92,.20) 0%, transparent 42%);
+    radial-gradient(circle at 15% 20%, rgba(74,144,194,.22) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(31,138,115,.20) 0%, transparent 42%);
   pointer-events: none;
 }
 @keyframes au-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
@@ -47,3 +47,5 @@
   .au-brand { padding: 24px; gap: 20px; }
   .au-brand__body, .au-brand__glyph { display: none; }
 }
+.au-panel { position: relative; }
+.au-panel__toggle { position: absolute; top: 24px; right: 24px; }

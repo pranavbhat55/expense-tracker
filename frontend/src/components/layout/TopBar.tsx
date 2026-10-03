@@ -1,4 +1,5 @@
 import { Badge } from "../common/primitives";
+import { ThemeToggle } from "../common/ThemeToggle";
 import { initials } from "../../utils/format";
 import "./layout.css";
 
@@ -18,6 +19,7 @@ export function TopBar({
       <button className="tb-menu-btn" onClick={onMenuClick} aria-label="Open menu">☰</button>
       <h1 className="tb-title">{title}</h1>
       <div className="tb-user">
+        <ThemeToggle />
         {role && <Badge tone={role === "OWNER" ? "brand" : "neutral"}>{role}</Badge>}
         <div className="tb-user__who">
           <span className="tb-avatar" aria-hidden>{initials(display)}</span>

@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import { Button } from "../common/primitives";
+import { ThemeToggle } from "../common/ThemeToggle";
 import "./auth.css";
 
 export type AuthMode = "signin" | "create";
@@ -61,6 +62,7 @@ export function AuthScreen({
       </aside>
 
       <section className="au-panel">
+        <div className="au-panel__toggle"><ThemeToggle /></div>
         <div className="au-card">
           {invite.status === "loading" ? (
             <p className="au-muted">Checking your invitation…</p>
