@@ -21,7 +21,7 @@ export function RecentExpenses({ expenses }: { expenses: Expense[] }) {
       {recent.length === 0 ? (
         <EmptyState title="No expenses yet" description="Your latest transactions will show up here." />
       ) : (
-        <div className="db-recent-list">
+        <div className="db-recent-list ui-stagger">
           {recent.map((e) => (
             <div className="db-recent-row" key={e.id}>
               <div>

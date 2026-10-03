@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import type { ReactNode, ButtonHTMLAttributes } from "react";
 import "./primitives.css";
 
@@ -78,24 +77,10 @@ export function Modal({
   title: string;
   children: ReactNode;
 }) {
-  const [mounted, setMounted] = useState(open);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
-      const raf = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(raf);
-    }
-    setVisible(false);
-    const t = setTimeout(() => setMounted(false), 180);
-    return () => clearTimeout(t);
-  }, [open]);
-
-  if (!mounted) return null;
+  if (!open) return null;
   return (
-    <div className={`ui-modal__overlay ${visible ? "ui-modal__overlay--visible" : ""}`} onClick={onClose}>
-      <div className={`ui-modal ${visible ? "ui-modal--visible" : ""}`} onClick={(e) => e.stopPropagation()}>
+    <div className="ui-modal__overlay" onClick={onClose}>
+      <div className="ui-modal" onClick={(e) => e.stopPropagation()}>
         <div className="ui-modal__header">
           <h3>{title}</h3>
           <button className="ui-modal__close" onClick={onClose} aria-label="Close">

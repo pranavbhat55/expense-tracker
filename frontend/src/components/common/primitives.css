@@ -24,7 +24,7 @@
   color: #fff;
   box-shadow: 0 1px 2px rgba(25,26,30,.08), inset 0 1px 0 rgba(255,255,255,.25);
 }
-.ui-btn--primary:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 6px 18px rgba(169,118,15,.32), inset 0 1px 0 rgba(255,255,255,.3); }
+.ui-btn--primary:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-500) 40%, transparent), inset 0 1px 0 rgba(255,255,255,.3); }
 .ui-btn--secondary { background: var(--surface); color: var(--ink-900); border-color: var(--border); }
 .ui-btn--secondary:hover:not(:disabled) { background: var(--ink-50); }
 .ui-btn--ghost { background: transparent; color: var(--ink-700); }
@@ -167,3 +167,47 @@
 .ui-toast--danger { background: linear-gradient(155deg, var(--danger-500), color-mix(in srgb, var(--danger-500) 70%, black)); }
 @keyframes ui-toast-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ui-toast { animation: none; } }
+
+/* ---- toast: brief confirmation for actions with no other visible feedback ---- */
+.ui-toast-stack { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+.ui-toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: var(--radius-md);
+  background: var(--ink-900); color: var(--surface);
+  font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg);
+  animation: ui-toast-in .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.ui-toast__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2-300); flex-shrink: 0; }
+.ui-toast--leaving { animation: ui-toast-out .25s ease forwards; }
+@keyframes ui-toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes ui-toast-out { to { opacity: 0; transform: translateY(6px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .ui-toast { animation: none; } }
+
+/* ---- button loading pulse (submit states) ---- */
+.ui-btn--busy { position: relative; color: transparent !important; pointer-events: none; }
+.ui-btn--busy::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%;
+  animation: ui-spin .7s linear infinite;
+}
+
+/* ---- row entrance stagger for freshly-loaded lists ---- */
+@keyframes ui-row-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ui-stagger > * { animation: ui-row-in .3s ease both; }
+.ui-stagger > *:nth-child(1) { animation-delay: 0ms; } .ui-stagger > *:nth-child(2) { animation-delay: 30ms; }
+.ui-stagger > *:nth-child(3) { animation-delay: 60ms; } .ui-stagger > *:nth-child(4) { animation-delay: 90ms; }
+.ui-stagger > *:nth-child(5) { animation-delay: 120ms; } .ui-stagger > *:nth-child(6) { animation-delay: 150ms; }
+.ui-stagger > *:nth-child(n+7) { animation-delay: 170ms; }
+@media (prefers-reduced-motion: reduce) { .ui-stagger > * { animation: none; } }
+
+/* ---- count-up ready for the hero figure (applied via class toggle on mount) ---- */
+.db-ledger-hero__figure { animation: ui-figure-in .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes ui-figure-in { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .db-ledger-hero__figure { animation: none; } }
+
+/* ---- modal: entrance + backdrop fade (was instant pop before) ---- */
+.ui-modal__overlay { animation: ui-fade-in .18s ease both; }
+.ui-modal { animation: ui-modal-in .22s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-modal-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ui-modal__overlay, .ui-modal { animation: none; } }

@@ -39,7 +39,7 @@ export function MembersSection({
       ) : members.length === 0 ? (
         <EmptyState title="No members yet" />
       ) : (
-        <div className="ws-table" role="table" aria-label="Workspace members">
+        <div className="ws-table ui-stagger" role="table" aria-label="Workspace members">
           <div className="ws-row ws-row--head" role="row">
             <span>Name</span>
             <span>Email</span>

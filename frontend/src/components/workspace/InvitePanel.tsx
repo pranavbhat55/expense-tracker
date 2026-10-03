@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Badge, Button, Card } from "../common/primitives";
-import { showToast } from "../common/Toast";
+import { notify } from "../common/Toast";
 import type { WorkspaceInvitation, WorkspaceSettings } from "../../api/workspace";
 import "./workspace.css";
 
@@ -40,7 +40,7 @@ export function InvitePanel({
 
   async function copy() {
     if (!link) return;
-    try { await navigator.clipboard.writeText(link.url); setCopied(true); showToast("Invite link copied"); } catch { setCopied(false); }
+    try { await navigator.clipboard.writeText(link.url); setCopied(true); notify("Invite link copied"); } catch { setCopied(false); }
   }
 
   return (

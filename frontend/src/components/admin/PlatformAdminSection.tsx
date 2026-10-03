@@ -29,6 +29,7 @@ export function PlatformAdminSection() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, same pattern App.tsx uses
     load();
   }, []);
 
