@@ -2,6 +2,15 @@ import type { TimelineReport } from "../types/report";
 
 const API_URL = "http://localhost:3000";
 
+export class TimelineApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "TimelineApiError";
+    this.status = status;
+  }
+}
+
 export async function getTimelineReport(
   from: string,
   to: string,
@@ -25,7 +34,8 @@ export async function getTimelineReport(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch timeline report");
+    const data = await response.json().catch(() => ({}));
+    throw new TimelineApiError(response.status, typeof data.message === "string" ? data.message : "Failed to fetch timeline report");
   }
 
   return response.json();

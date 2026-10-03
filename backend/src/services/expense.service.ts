@@ -28,7 +28,7 @@ export async function createExpense(
 }
 
 export async function getExpenses(
-    userId: number,
+    userId: number | null,
     tenantId: number,
     filters: {
         month?: string;
@@ -38,7 +38,7 @@ export async function getExpenses(
     },
 ) {
     const where: {
-        userId: number;
+        userId?: number;
         tenantId: number;
         category?: string;
         date?: {
@@ -46,7 +46,7 @@ export async function getExpenses(
             lt: Date;
         };
     } = {
-        userId,
+        ...(userId !== null ? { userId } : {}),
         tenantId,
     };
 
@@ -73,6 +73,7 @@ export async function getExpenses(
     const [expenses, total] = await Promise.all([
         prisma.expense.findMany({
             where,
+            ...(userId === null ? { include: { user: { select: { id: true, name: true } } } } : {}),
             orderBy: [
                 { date: "desc" },
                 { createdAt: "desc" },
@@ -99,19 +100,19 @@ export async function getExpenses(
 }
 
 export async function getExpenseSummary(
-    userId: number,
+    userId: number | null,
     tenantId: number,
     month?: string,
 ) {
     const where: {
-        userId: number;
+        userId?: number;
         tenantId: number;
         date?: {
             gte: Date;
             lt: Date;
         };
     } = {
-        userId,
+        ...(userId !== null ? { userId } : {}),
         tenantId,
     };
 

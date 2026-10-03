@@ -10,3 +10,12 @@ export const auditLogQuerySchema = z.object({
     action: z.string().trim().min(1).optional(),
     entityType: z.string().trim().min(1).optional(),
 });
+
+export const createInvitationSchema = z.object({
+    email: z.string().trim().email("Email must be valid"),
+    role: z.enum(["ADMIN", "MEMBER"]).default("MEMBER"),
+});
+
+export const workspaceSettingsSchema = z.object({
+    inviteOnly: z.boolean(),
+});

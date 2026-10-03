@@ -1,0 +1,23 @@
+.tl-view { display: flex; flex-direction: column; gap: var(--space-4); }
+.tl-controls-card { display: flex; flex-direction: column; gap: var(--space-4); }
+.tl-lock {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-sm);
+  background: var(--warning-100); color: var(--ink-700); font-size: 13px;
+}
+.tl-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4); }
+.tl-field { display: flex; flex-direction: column; gap: 4px; }
+.tl-field label { font-size: 12px; font-weight: 600; color: var(--ink-500); }
+.tl-field input, .tl-field select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--surface);
+  color: var(--ink-900);
+}
+.tl-stat-grid { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
+@media (max-width: 900px) {
+  .tl-stat-grid { grid-template-columns: 1fr 1fr; }
+}
