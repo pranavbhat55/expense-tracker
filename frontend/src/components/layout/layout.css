@@ -25,11 +25,11 @@
 .sb-brand { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3) var(--space-5); }
 .sb-brand__mark {
   width: 32px; height: 32px; border-radius: var(--radius-sm);
-  background: linear-gradient(155deg, var(--brand-300), var(--brand-600) 60%, var(--accent2-700));
-  color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(122,69,6,.4);
+  background: var(--brand-500);
+  color: #fff; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
-.sb-brand__name { font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: var(--ink-900); }
+.sb-brand__name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--ink-900); }
 .sb-brand__workspace { font-size: 12px; color: var(--ink-500); }
 
 .sb-nav { flex: 1; display: flex; flex-direction: column; gap: var(--space-4); overflow-y: auto; }
@@ -48,7 +48,7 @@
   border-left-color: var(--brand-500);
   color: var(--ink-900);
   font-weight: 600;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-500) 12%, transparent), color-mix(in srgb, var(--accent2-500) 6%, transparent) 60%, transparent);
+  background: var(--ink-50);
 }
 .sb-nav-item__icon { width: 18px; text-align: center; color: inherit; opacity: 0.85; }
 
@@ -107,8 +107,8 @@
 .sb-plan { justify-content: flex-start; }
 .sb-plan__seats { margin-left: auto; font-weight: 500; color: var(--ink-500); }
 
-.app-shell__content > section, .app-shell__content > .db-dashboard-view { animation: ui-rise .34s cubic-bezier(.2, .7, .2, 1) both; }
-@keyframes ui-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.app-shell__content > section, .app-shell__content > .db-dashboard-view { animation: ui-rise .18s ease both; }
+@keyframes ui-rise { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .app-shell__content > section, .app-shell__content > .db-dashboard-view, .ui-skeleton { animation: none; } }
 
 @media (max-width: 900px) {

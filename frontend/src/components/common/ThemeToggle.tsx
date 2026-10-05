@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./primitives.css";
 
+/* eslint-disable react-refresh/only-export-components -- applyStoredTheme shares this file with ThemeToggle by design */
+
 type Theme = "light" | "dark";
 
 function getInitialTheme(): Theme {

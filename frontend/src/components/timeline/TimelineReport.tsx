@@ -116,12 +116,6 @@ export function TimelineReportView({
             {report.timeline.length > 0 ? (
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={report.timeline} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                  <defs>
-                    <linearGradient id="tlBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--brand-300)" />
-                      <stop offset="100%" stopColor="var(--brand-700)" />
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 5" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={axisStyle} minTickGap={28} />
                   <YAxis axisLine={false} tickLine={false} tick={axisStyle} tickFormatter={formatCompactCurrency} width={56} />
@@ -136,7 +130,7 @@ export function TimelineReportView({
                       boxShadow: "var(--shadow-md)",
                     }}
                   />
-                  <Bar dataKey="total" name="Spending" fill="url(#tlBar)" barSize={28} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="total" name="Spending" fill="var(--brand-500)" barSize={28} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

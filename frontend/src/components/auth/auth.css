@@ -1,51 +1,39 @@
 .au-shell { display: grid; grid-template-columns: minmax(360px, 5fr) 6fr; min-height: 100vh; }
 
-/* Brand panel is deliberately fixed-dark in both themes: it is the product's signature surface */
-.au-brand { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 56px; background: #191a1e; color: #f2f0e9; }
+/* Brand panel: solid, flat, no gradient/texture - the restraint is the point.
+   Deliberately fixed-dark in BOTH themes (not var(--ink-900)/var(--canvas) -
+   those invert in dark mode, which turned this panel white with invisible
+   light-on-white bullet text). */
+.au-brand { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 56px; background: #16181d; color: #f3f4f6; }
 .au-brand__top { display: flex; align-items: center; gap: 12px; }
-.au-brand__mark { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand-500); color: #ffffff; font-weight: 700; border-radius: 4px; }
-.au-brand__name { font-family: var(--font-serif); font-size: 20px; font-weight: 600; }
-.au-brand__body { position: relative; z-index: 1; max-width: 460px; }
-.au-brand h1 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(32px, 3.4vw, 46px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 40px; }
+.au-brand__mark { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand-500); color: #fff; font-weight: 700; border-radius: var(--radius-sm); }
+.au-brand__name { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.au-brand__body { max-width: 440px; }
+.au-brand h1 { font-weight: 600; font-size: clamp(30px, 3.2vw, 42px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 40px; }
 .au-brand ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.au-brand li { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-top: 1px solid rgba(242, 240, 233, 0.14); }
-.au-brand li strong { font-size: 15px; font-weight: 600; color: #8fc1ea; }
-.au-brand li span { font-size: 14px; line-height: 1.5; color: rgba(242, 240, 233, 0.66); }
-.au-brand__glyph { position: absolute; right: -40px; bottom: -120px; font-family: var(--font-serif); font-size: 460px; line-height: 1; background: linear-gradient(160deg, rgba(127,178,222,.18), rgba(31,138,115,.14)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; animation: au-float 9s ease-in-out infinite; }
-.au-brand::before {
-  content: "";
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(74,144,194,.22) 0%, transparent 45%),
-    radial-gradient(circle at 85% 75%, rgba(31,138,115,.20) 0%, transparent 42%);
-  pointer-events: none;
-}
-@keyframes au-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
-@media (prefers-reduced-motion: reduce) { .au-brand__glyph { animation: none; } }
-.au-brand li { position: relative; }
-.au-brand li::before { content: ""; position: absolute; left: 0; top: 0; width: 28px; height: 1px; background: var(--brand-300); }
+.au-brand li { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-top: 1px solid rgba(246, 247, 249, 0.12); }
+.au-brand li strong { font-size: 14px; font-weight: 600; color: #fff; }
+.au-brand li span { font-size: 13px; line-height: 1.5; color: rgba(246, 247, 249, 0.6); }
 
-.au-panel { display: grid; place-items: center; padding: 32px; background: var(--canvas); }
-.au-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: var(--space-4); }
-.au-card { animation: ui-rise .4s cubic-bezier(.2,.7,.2,1) both; }
-.au-card h2 { font-family: var(--font-serif); font-weight: 600; font-size: 32px; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
+.au-panel { position: relative; display: grid; place-items: center; padding: 32px; background: var(--canvas); }
+.au-panel__toggle { position: absolute; top: 24px; right: 24px; }
+.au-card { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: var(--space-4); }
+.au-card h2 { font-weight: 600; font-size: 26px; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
 .au-muted { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-500); }
-.au-error { margin: 0; padding: 10px 12px; font-size: 13px; color: var(--danger-500); background: var(--danger-100); border-left: 3px solid var(--danger-500); }
+.au-error { margin: 0; padding: 10px 12px; font-size: 13px; color: var(--danger-500); background: var(--danger-100); border-radius: var(--radius-sm); border-left: 2px solid var(--danger-500); }
 .au-form { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-2); }
 .au-field { display: flex; flex-direction: column; gap: 6px; }
-.au-field label { font-size: 12px; font-weight: 600; color: var(--ink-700); }
-.au-field input { padding: 12px 14px; font: inherit; font-size: 14px; color: var(--ink-900); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s, box-shadow .15s; }
-.au-field input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-50); }
+.au-field label { font-size: 13px; font-weight: 500; color: var(--ink-700); }
+.au-field input { padding: 10px 12px; font: inherit; font-size: 14px; color: var(--ink-900); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s; }
+.au-field input:focus { outline: none; border-color: var(--brand-500); }
 .au-field input[readonly] { background: var(--ink-50); color: var(--ink-700); }
-.au-submit { width: 100%; padding: 13px 16px; }
-.au-switch { align-self: flex-start; background: none; border: none; padding: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--brand-600); cursor: pointer; }
+.au-submit { width: 100%; padding: 11px 16px; }
+.au-switch { align-self: flex-start; background: none; border: none; padding: 0; font: inherit; font-size: 13px; font-weight: 500; color: var(--brand-500); cursor: pointer; }
 .au-switch:hover { text-decoration: underline; }
 .au-fineprint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-500); }
 
 @media (max-width: 900px) {
   .au-shell { grid-template-columns: 1fr; }
   .au-brand { padding: 24px; gap: 20px; }
-  .au-brand__body, .au-brand__glyph { display: none; }
+  .au-brand__body { display: none; }
 }
-.au-panel { position: relative; }
-.au-panel__toggle { position: absolute; top: 24px; right: 24px; }

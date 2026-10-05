@@ -34,12 +34,6 @@ export function SpendingChart({ summary }: { summary: ExpenseSummary | null }) {
       {hasData ? (
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={summary.byCategory} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}>
-            <defs>
-              <linearGradient id="dbCategoryBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--brand-300)" />
-                <stop offset="100%" stopColor="var(--brand-700)" />
-              </linearGradient>
-            </defs>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 5" />
             <XAxis dataKey="category" axisLine={false} tickLine={false} tick={axisStyle} interval={0} tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)} />
             <YAxis axisLine={false} tickLine={false} tick={axisStyle} tickFormatter={formatCompactCurrency} width={56} />
@@ -54,7 +48,7 @@ export function SpendingChart({ summary }: { summary: ExpenseSummary | null }) {
                 boxShadow: "var(--shadow-md)",
               }}
             />
-            <Bar dataKey="total" name="Spending" fill="url(#dbCategoryBar)" barSize={32} radius={[6, 6, 0, 0]} />
+            <Bar dataKey="total" name="Spending" fill="var(--brand-500)" barSize={32} radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       ) : (
