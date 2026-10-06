@@ -47,7 +47,7 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-8: 48px;
-  --sidebar-w: 240px;
+  --sidebar-w: 248px;
   --topbar-h: 64px;
 }
 
@@ -112,18 +112,30 @@
   --danger-100: #3a211d;
 }
 
+:root {
+  /* Fixed sidebar palette, independent of theme - same intent as the auth brand panel. */
+  --sidebar-bg: #0e0f12;
+  --sidebar-bg-raised: #17181c;
+  --sidebar-ink: #f3f4f6;
+  --sidebar-ink-muted: #9499a3;
+  --sidebar-border: #24262b;
+}
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background: var(--canvas);
+  background-color: var(--canvas);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink-900) 6%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
   color: var(--ink-900);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Tabular, old-style serif numerals - used for money throughout the app */
+/* Tabular monospace numerals - a technical, precise register for money/data, used throughout */
 .num {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }

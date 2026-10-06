@@ -12,9 +12,12 @@
   margin: 0 auto;
 }
 
+/* Fixed-dark rail regardless of page theme - the signature move that makes this read as a
+   considered dev-tool/fintech product (Linear, Vercel, Raycast) rather than a generic light
+   SaaS dashboard with a plain white sidebar. */
 .sb-sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   padding: var(--space-5) var(--space-3);
@@ -24,39 +27,40 @@
 }
 .sb-brand { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3) var(--space-5); }
 .sb-brand__mark {
-  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   background: var(--brand-500);
-  color: #fff; font-weight: 600;
+  color: #fff; font-weight: 700; font-size: 13px;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-300) 40%, transparent);
 }
-.sb-brand__name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--ink-900); }
-.sb-brand__workspace { font-size: 12px; color: var(--ink-500); }
+.sb-brand__name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--sidebar-ink); }
+.sb-brand__workspace { font-size: 12px; color: var(--sidebar-ink-muted); }
 
 .sb-nav { flex: 1; display: flex; flex-direction: column; gap: var(--space-4); overflow-y: auto; }
-.sb-nav__group { display: flex; flex-direction: column; gap: 2px; }
-.sb-nav__label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-300); padding: var(--space-2) var(--space-3) 4px; }
+.sb-nav__group { display: flex; flex-direction: column; gap: 1px; }
+.sb-nav__label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sidebar-ink-muted); padding: var(--space-2) var(--space-3) 4px; opacity: 0.7; }
 .sb-nav-item {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: 10px 12px; border-radius: 0;
-  border-left: 2px solid transparent;
-  background: none; border-top: none; border-right: none; border-bottom: none; text-align: left; cursor: pointer;
-  font-size: 14px; font-weight: 500; color: var(--ink-700);
-  margin-left: -1px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  border: none; background: none; text-align: left; cursor: pointer;
+  font-size: 13.5px; font-weight: 500; color: var(--sidebar-ink-muted);
+  transition: background .12s ease, color .12s ease;
 }
-.sb-nav-item:hover { color: var(--ink-900); }
+.sb-nav-item:hover { color: var(--sidebar-ink); background: var(--sidebar-bg-raised); }
 .sb-nav-item--active {
-  border-left-color: var(--brand-500);
-  color: var(--ink-900);
+  color: var(--sidebar-ink);
   font-weight: 600;
-  background: var(--ink-50);
+  background: var(--sidebar-bg-raised);
+  box-shadow: inset 2px 0 0 var(--brand-500), 0 0 16px -4px color-mix(in srgb, var(--brand-500) 70%, transparent);
 }
 .sb-nav-item__icon { width: 18px; text-align: center; color: inherit; opacity: 0.85; }
 
 .sb-plan {
   display: flex; align-items: center; gap: var(--space-2);
   padding: var(--space-3); margin-top: var(--space-3);
-  border-radius: var(--radius-sm); background: var(--ink-50);
-  font-size: 12px; font-weight: 600; color: var(--ink-700);
+  border-radius: var(--radius-sm); background: var(--sidebar-bg-raised);
+  border: 1px solid var(--sidebar-border);
+  font-size: 12px; font-weight: 600; color: var(--sidebar-ink);
 }
 .sb-plan__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success-500); }
 
@@ -105,7 +109,7 @@
 @media (max-width: 900px) { .tb-user__text small, .tb-user .ui-badge { display: none; } }
 
 .sb-plan { justify-content: flex-start; }
-.sb-plan__seats { margin-left: auto; font-weight: 500; color: var(--ink-500); }
+.sb-plan__seats { margin-left: auto; font-weight: 500; color: var(--sidebar-ink-muted); }
 
 .app-shell__content > section, .app-shell__content > .db-dashboard-view { animation: ui-rise .18s ease both; }
 @keyframes ui-rise { from { opacity: 0; } to { opacity: 1; } }
