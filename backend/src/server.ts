@@ -6,6 +6,7 @@ import budgetRoutes from "./routes/budget.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -30,6 +31,7 @@ app.use("/subscription", subscriptionRoutes);
 app.use("/subscriptions", subscriptionRoutes);
 app.use("/reports", reportRoutes);
 app.use("/workspace", workspaceRoutes);
+app.use("/admin", adminRoutes);
 
 app.use("/auth", authRoutes);
 

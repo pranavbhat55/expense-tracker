@@ -27,6 +27,7 @@ export async function getExpenses(
     category?: string,
     page: number = 1,
     limit: number = 10,
+    scope: "mine" | "team" = "mine",
 ): Promise<ExpensesResponse> {
     const token = localStorage.getItem("token");
 
@@ -41,6 +42,10 @@ export async function getExpenses(
 
     if (category) {
         params.set("category", category);
+    }
+
+    if (scope === "team") {
+        params.set("scope", "team");
     }
 
     const response = await fetch(
@@ -150,6 +155,7 @@ export async function deleteExpense(
 }
 export async function getExpenseSummary(
     month?: string,
+    scope: "mine" | "team" = "mine",
 ): Promise<ExpenseSummary> {
     const token = localStorage.getItem("token");
 
@@ -157,6 +163,10 @@ export async function getExpenseSummary(
 
     if (month) {
         params.set("month", month);
+    }
+
+    if (scope === "team") {
+        params.set("scope", "team");
     }
 
     const query = params.toString();

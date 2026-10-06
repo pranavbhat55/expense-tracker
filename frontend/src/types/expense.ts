@@ -7,6 +7,8 @@ export interface Expense {
     createdAt: string;
     updatedAt: string;
     userId: number;
+    /** Present only in the owner/admin team view. */
+    user?: { id: number; name: string };
 }
 
 export interface ExpensesResponse {

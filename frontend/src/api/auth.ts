@@ -44,6 +44,7 @@ export async function register(
     email: string,
     password: string,
     workspaceSlug?: string,
+    inviteToken?: string,
 ): Promise<AuthResponse> {
     const response = await fetch(
         `${API_URL}/auth/register`,
@@ -57,6 +58,7 @@ export async function register(
                 email,
                 password,
                 workspaceSlug: workspaceSlug || undefined,
+                inviteToken: inviteToken || undefined,
             }),
         },
     );
@@ -71,5 +73,15 @@ export async function register(
         );
     }
 
+    return data;
+}
+
+export interface InvitationPreview { email: string; role: "ADMIN" | "MEMBER" | "OWNER"; organization: string }
+
+/** Public: shows which organization an invite link belongs to before the person signs up. */
+export async function getInvitationPreview(token: string): Promise<InvitationPreview> {
+    const response = await fetch(`${API_URL}/auth/invitations/${encodeURIComponent(token)}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof data.message === "string" ? data.message : "This invitation link is not valid");
     return data;
 }

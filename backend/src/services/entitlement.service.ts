@@ -10,7 +10,7 @@ const PLAN_ENTITLEMENTS: Record<Plan, {
     limits: { maxUsers: number | null; maxExpensesPerMonth: number | null };
 }> = {
     FREE: { features: { timelineReports: false, csvExport: false, budgets: true }, limits: { maxUsers: 1, maxExpensesPerMonth: 100 } },
-    PRO: { features: { timelineReports: true, csvExport: true, budgets: true }, limits: { maxUsers: 5, maxExpensesPerMonth: 1000 } },
+    PRO: { features: { timelineReports: true, csvExport: true, budgets: true }, limits: { maxUsers: 25, maxExpensesPerMonth: 1000 } },
     BUSINESS: { features: { timelineReports: true, csvExport: true, budgets: true }, limits: { maxUsers: null, maxExpensesPerMonth: null } },
 };
 
@@ -54,7 +54,7 @@ export async function getTenantEntitlements(tenantId: number) {
     const base = getPlanEntitlements(plan);
     const [expensesThisMonth, users] = await Promise.all([
         prisma.expense.count({ where: { tenantId, date: monthRange() } }),
-        prisma.user.count({ where: { tenantId } }),
+        prisma.user.count({ where: { tenantId, deactivatedAt: null } }),
     ]);
     return {
         subscription,

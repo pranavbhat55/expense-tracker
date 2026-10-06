@@ -1,0 +1,141 @@
+:root {
+  /* Professional steel-blue accent - replaces the gold/copper scheme, which read as
+     generic "AI generated premium" rather than a considered product choice. */
+  --brand-50: #eaf1f8;
+  --brand-100: #d2e3f2;
+  --brand-300: #7fabd4;
+  --brand-500: #2e6da4;
+  --brand-600: #255a87;
+  --brand-700: #1c4769;
+
+  /* Ink / paper - cool, neutral, not warm/gold-adjacent */
+  --ink-900: #16181d;
+  --ink-700: #3f4450;
+  --ink-500: #6b7280;
+  --ink-300: #9ca3af;
+  --ink-100: #e4e7eb;
+  --ink-50: #f0f1f3;
+  --surface: #ffffff;
+  --canvas: #f6f7f9;
+  --border: #dde1e6;
+
+  /* Second tone: muted teal, used sparingly for contrast (rings, sparkline) */
+  --accent2-300: #5bb8a0;
+  --accent2-500: #1f8a73;
+  --accent2-700: #146354;
+
+  --success-500: #1f8a73;
+  --success-100: #e1f1ec;
+  --warning-500: #b8860b;
+  --warning-100: #f6ecd2;
+  --danger-500: #b3362a;
+  --danger-100: #f5e2df;
+
+  --font-sans: "Inter", -apple-system, "SF Pro Display", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(22, 24, 29, 0.04);
+  --shadow-md: 0 2px 8px rgba(22, 24, 29, 0.06);
+  --shadow-lg: 0 8px 24px rgba(22, 24, 29, 0.10);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink-900: #f3f4f6;
+    --ink-700: #c9ccd3;
+    --ink-500: #93969e;
+    --ink-300: #565a63;
+    --ink-100: #2c2f36;
+    --ink-50: #23262c;
+    --canvas: #15161a;
+    --surface: #1f2126;
+    --border: #393c43;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+    --brand-50: #152736;
+    --brand-100: #1b3550;
+    --brand-300: #7fb2de;
+    --brand-500: #4a90c2;
+    --brand-600: #6aa6d3;
+    --brand-700: #8fc1ea;
+    --accent2-300: #6fd0b6;
+    --accent2-500: #2fa589;
+    --accent2-700: #52c4a8;
+    --success-500: #38b596;
+    --success-100: #12302a;
+    --warning-100: #3a2c0f;
+    --danger-500: #d9685a;
+    --danger-100: #3a211d;
+  }
+}
+
+/* Explicit manual override, independent of OS preference - set by the in-app theme toggle. */
+:root[data-theme="dark"] {
+  --ink-900: #f3f4f6;
+  --ink-700: #c9ccd3;
+  --ink-500: #93969e;
+  --ink-300: #565a63;
+  --ink-100: #2c2f36;
+  --ink-50: #23262c;
+  --canvas: #15161a;
+  --surface: #1f2126;
+  --border: #393c43;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --brand-50: #152736;
+  --brand-100: #1b3550;
+  --brand-300: #7fb2de;
+  --brand-500: #4a90c2;
+  --brand-600: #6aa6d3;
+  --brand-700: #8fc1ea;
+  --accent2-300: #6fd0b6;
+  --accent2-500: #2fa589;
+  --accent2-700: #52c4a8;
+  --success-500: #38b596;
+  --success-100: #12302a;
+  --warning-100: #3a2c0f;
+  --danger-500: #d9685a;
+  --danger-100: #3a211d;
+}
+
+:root {
+  /* Fixed sidebar palette, independent of theme - same intent as the auth brand panel. */
+  --sidebar-bg: #0e0f12;
+  --sidebar-bg-raised: #17181c;
+  --sidebar-ink: #f3f4f6;
+  --sidebar-ink-muted: #9499a3;
+  --sidebar-border: #24262b;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--canvas);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink-900) 6%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular monospace numerals - a technical, precise register for money/data, used throughout */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
