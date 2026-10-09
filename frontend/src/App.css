@@ -217,15 +217,6 @@ button {
   border-color: #bfc3bd;
 }
 
-.expense-form input:focus,
-.filters input:focus,
-.budget-form input:focus,
-.login-container input:focus {
-  background: #ffffff;
-  border-color: #35745d;
-  box-shadow:
-    0 0 0 3px rgba(53, 116, 93, 0.11);
-}
 
 .expense-form button {
   grid-column: span 4;
@@ -1018,11 +1009,6 @@ button {
    ACCESSIBILITY
 ======================================== */
 
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #35745d;
-  outline-offset: 2px;
-}
 
 /* ========================================
    TABLET
@@ -1193,10 +1179,6 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   filter: none;
 }
 
-input[type="date"]:focus,
-input[type="month"]:focus {
-  color: #17201d;
-}
 
 
 /* =========================================================
@@ -1291,12 +1273,6 @@ input[type="month"]:focus {
   box-shadow: inset 0 1px 1px rgba(23, 32, 29, .025);
 }
 
-.expense-form input:focus,
-.filters input:focus,
-.budget-form input:focus,
-.login-container input:focus {
-  transform: translateY(-1px);
-}
 
 /* Buttons: stronger hierarchy */
 .expense-form button,
@@ -1949,13 +1925,6 @@ button:disabled {
   color: #aaa298;
 }
 
-.expense-form input:focus,
-.filters input:focus,
-.budget-form input:focus,
-.login-container input:focus {
-  border-color: var(--sage);
-  box-shadow: 0 0 0 3px rgba(125, 155, 137, .14);
-}
 
 /* Primary action = sage */
 .expense-form button,
@@ -2162,10 +2131,6 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   filter: none;
 }
 
-input[type="date"]:focus,
-input[type="month"]:focus {
-  color: var(--ink);
-}
 
 /* ---------------------------------------------------------
    ANIMATION

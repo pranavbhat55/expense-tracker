@@ -139,3 +139,12 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
+
+/* Keyboard focus indicator. Theme-aware (brand blue works on light and dark surfaces) and
+   zero-specificity via :where() so any component can still override it deliberately.
+   Without this, focus falls back to the browser default (near-black), which is invisible on
+   the dark theme - an accessibility failure for keyboard users. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
