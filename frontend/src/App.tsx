@@ -80,6 +80,7 @@ import { ActivitySection } from "./components/workspace/ActivitySection";
 import { BillingSection } from "./components/billing/BillingSection";
 import { PlatformAdminSection } from "./components/admin/PlatformAdminSection";
 import { ToastHost, notify } from "./components/common/Toast";
+import { CommandPalette, type PaletteCommand } from "./components/common/CommandPalette";
 
 const CSV_COLUMNS = [
   "Date",
@@ -937,9 +938,30 @@ function App() {
     admin: "Platform Admin",
   };
 
+  // Commands use the same permission flags as the sidebar, so the palette can never offer
+  // navigation the person cannot see. Backend authorization remains the source of truth.
+  const showMembersNav = canManageSubscription || members.length > 0;
+  const paletteCommands: PaletteCommand[] = [
+    { id: "go-dashboard", group: "Go to", label: "Dashboard", keywords: "home overview", run: () => setView("dashboard") },
+    { id: "go-expenses", group: "Go to", label: "Expenses", keywords: "transactions list", run: () => setView("expenses") },
+    { id: "go-budgets", group: "Go to", label: "Budgets", keywords: "limits", run: () => setView("budgets") },
+    { id: "go-timeline", group: "Go to", label: "Timeline", keywords: "report chart trend", run: () => setView("timeline") },
+    ...(showMembersNav ? [
+      { id: "go-members", group: "Go to", label: "Members", keywords: "team people invite seats", run: () => setView("members") },
+      { id: "go-activity", group: "Go to", label: "Activity", keywords: "audit log history", run: () => setView("activity") },
+    ] : []),
+    ...(subscription ? [{ id: "go-billing", group: "Go to", label: "Billing", keywords: "plan subscription license", run: () => setView("billing") }] : []),
+    ...(canViewAdmin ? [{ id: "go-admin", group: "Go to", label: "Platform admin", keywords: "tenants", run: () => setView("admin") }] : []),
+    { id: "act-add-expense", group: "Actions", label: "Add expense", keywords: "new create", run: () => { setView("expenses"); handleCancelEdit(); setExpenseDrawerOpen(true); } },
+    ...(canUseBudgets ? [{ id: "act-add-budget", group: "Actions", label: "Set a budget", keywords: "new create limit", run: () => { setView("budgets"); setBudgetDrawerOpen(true); } }] : []),
+    { id: "act-theme", group: "Actions", label: "Toggle light / dark mode", keywords: "theme appearance", run: () => document.querySelector<HTMLButtonElement>(".ui-theme-toggle")?.click() },
+    { id: "act-logout", group: "Actions", label: "Log out", keywords: "sign out", run: handleLogout },
+  ];
+
   return (
     <>
       <ToastHost />
+      <CommandPalette commands={paletteCommands} />
       <div className="app-shell">
       {mobileNavOpen && (
         <div

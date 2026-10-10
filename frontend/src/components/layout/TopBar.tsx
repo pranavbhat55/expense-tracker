@@ -18,6 +18,15 @@ export function TopBar({
     <header className="tb-topbar">
       <button className="tb-menu-btn" onClick={onMenuClick} aria-label="Open menu">☰</button>
       <h1 className="tb-title">{title}</h1>
+      <button
+        type="button"
+        className="tb-search"
+        onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
+        aria-label="Open command palette"
+      >
+        <span>Search or jump to…</span>
+        <kbd>{typeof navigator !== "undefined" && /Mac/i.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
+      </button>
       <div className="tb-user">
         <ThemeToggle />
         {role && <Badge tone={role === "OWNER" ? "brand" : "neutral"}>{role}</Badge>}
